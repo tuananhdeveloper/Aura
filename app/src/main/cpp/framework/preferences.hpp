@@ -65,7 +65,7 @@ namespace Framework {
             dir = !xdg.empty() ? xdg : (!home.empty() ? home + "/.local/share" : "");
     #endif
             if (dir.empty()) return "";
-            dir += "/MyRaylibGame/";
+            dir += "/@@NAME@@/";
             MakeDirectory(dir.c_str());
             return dir;
 #endif

@@ -103,16 +103,17 @@ public final class StarterGenerator {
             write(output.resolve("build.gradle.kts"), "");
         }
         Path strings = output.resolve("app/src/main/res/values/strings.xml");
-        write(strings, Files.readString(strings).replace("MyRaylibGame", options.name()));
+        write(strings, Files.readString(strings).replace("@@APP_NAME@@", options.name()));
         Path cmake = output.resolve("app/src/main/cpp/CMakeLists.txt");
         write(cmake, Files.readString(cmake)
-                .replace("project(myraylibgame LANGUAGES C CXX)",
-                        "project(" + options.name() + " LANGUAGES C CXX)")
-                .replace("com.tinybytelabs.myraylibgame", options.applicationId())
-                .replace("elseif (CMAKE_SYSTEM_NAME STREQUAL \"iOS\")",
-                        "elseif (CMAKE_SYSTEM_NAME STREQUAL \"iOS\")\n    enable_language(OBJC)")
-                .replace("MACOSX_BUNDLE_BUNDLE_NAME \"MyRaylibGame\"",
-                        "MACOSX_BUNDLE_BUNDLE_NAME \"" + options.name() + "\""));
+                .replace("@@NAME@@", options.name())
+                .replace("@@PACKAGE@@", options.applicationId()));
+        Path manifest = output.resolve("app/src/main/AndroidManifest.xml");
+        write(manifest, Files.readString(manifest)
+                .replace("@@NAME@@", options.name()));
+        Path preferences = output.resolve("app/src/main/cpp/framework/preferences.hpp");
+        write(preferences, Files.readString(preferences)
+                .replace("@@NAME@@", options.name()));
         for (String file : List.of("app/src/main/cpp/main.cpp", "app/src/main/cpp/framework/platform.hpp")) {
             Path source = output.resolve(file);
             write(source, "#if defined(__APPLE__)\n#include <TargetConditionals.h>\n#endif\n" + Files.readString(source));

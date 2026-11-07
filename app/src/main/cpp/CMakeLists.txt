@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(myraylibgame LANGUAGES C CXX)
+project(@@NAME@@ LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 
 set(RAYLIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/raylib/src)
@@ -45,12 +45,12 @@ if(ANDROID)
         ${CMAKE_ANDROID_NDK}/sources/android/native_app_glue
     )
 
-    add_library(myraylibgame SHARED main.cpp)
+    add_library(@@NAME@@ SHARED main.cpp)
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -u ANativeActivity_onCreate")
-    target_link_options(myraylibgame PRIVATE -Wl,--wrap=fopen)
+    target_link_options(@@NAME@@ PRIVATE -Wl,--wrap=fopen)
 
     target_link_libraries(
-        myraylibgame
+        @@NAME@@
         PRIVATE
         raylib
         native_app_glue
@@ -72,11 +72,11 @@ elseif(EMSCRIPTEN)
         "-sMAX_WEBGL_VERSION=2"
     )
 
-    add_executable(myraylibgame main.cpp)
-    target_link_libraries(myraylibgame PRIVATE raylib)
-    target_link_options(myraylibgame PRIVATE "SHELL:--preload-file \"${ASSETS_DIR}@/\"")
-    set_property(TARGET myraylibgame APPEND PROPERTY LINK_DEPENDS ${WEB_ASSETS})
-    set_target_properties(myraylibgame PROPERTIES SUFFIX ".html")
+    add_executable(@@NAME@@ main.cpp)
+    target_link_libraries(@@NAME@@ PRIVATE raylib)
+    target_link_options(@@NAME@@ PRIVATE "SHELL:--preload-file \"${ASSETS_DIR}@/\"")
+    set_property(TARGET @@NAME@@ APPEND PROPERTY LINK_DEPENDS ${WEB_ASSETS})
+    set_target_properties(@@NAME@@ PROPERTIES SUFFIX ".html")
 elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(CMAKE_SYSTEM_NAME iOS)
     set(CMAKE_OSX_SYSROOT iphoneos)
@@ -99,19 +99,19 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
     set(ANGLE_GLES_HEADERS ${IOS_FRAMEWORKS_DIR}/libGLESv2.xcframework/ios-arm64/libGLESv2.framework/Headers)
 
-    add_executable(myraylibgame main.cpp)
-    set_target_properties(myraylibgame PROPERTIES
+    add_executable(@@NAME@@ main.cpp)
+    set_target_properties(@@NAME@@ PROPERTIES
             MACOSX_BUNDLE TRUE
-            MACOSX_BUNDLE_GUI_IDENTIFIER "com.tinybytelabs.myraylibgame"
-            MACOSX_BUNDLE_BUNDLE_NAME "MyRaylibGame"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "@@PACKAGE@@"
+            MACOSX_BUNDLE_BUNDLE_NAME "@@NAME@@"
             MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
             MACOSX_BUNDLE_BUNDLE_VERSION "1"
-            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.tinybytelabs.myraylibgame"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "@@PACKAGE@@"
             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
             XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
             MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
     )
-    set_target_properties(myraylibgame PROPERTIES
+    set_target_properties(@@NAME@@ PROPERTIES
             XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS
             "@executable_path/Frameworks"
 
@@ -120,7 +120,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
 
             XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY YES
     )
-    target_link_libraries(myraylibgame PRIVATE raylib)
+    target_link_libraries(@@NAME@@ PRIVATE raylib)
 
     string(REPLACE "/cpp" "" SOURCES_DIR "${CMAKE_SOURCE_DIR}")
     set(ASSETS_DIR "${SOURCES_DIR}/assets")
@@ -143,7 +143,7 @@ elseif (CMAKE_SYSTEM_NAME STREQUAL "iOS")
                 MACOSX_PACKAGE_LOCATION "${resource_location}"
         )
     endforeach()
-    target_sources(myraylibgame PRIVATE ${APP_ASSETS})
+    target_sources(@@NAME@@ PRIVATE ${APP_ASSETS})
 
     target_compile_definitions(raylib PRIVATE
             PLATFORM_IOS
@@ -206,13 +206,13 @@ else()
         endif()
     endif()
 
-    add_executable(myraylibgame main.cpp)
+    add_executable(@@NAME@@ main.cpp)
 
-    target_link_libraries(myraylibgame PRIVATE raylib)
+    target_link_libraries(@@NAME@@ PRIVATE raylib)
 
     if (WIN32)
         target_link_libraries(raylib PUBLIC winmm)
-        target_link_options(myraylibgame PRIVATE
+        target_link_options(@@NAME@@ PRIVATE
                 -static-libgcc
                 -static-libstdc++
                 -static
@@ -220,7 +220,7 @@ else()
     endif()
 endif()
 
-target_include_directories(myraylibgame PRIVATE ${APP_INCLUDE_DIRS})
-target_sources(myraylibgame PRIVATE
+target_include_directories(@@NAME@@ PRIVATE ${APP_INCLUDE_DIRS})
+target_sources(@@NAME@@ PRIVATE
         framework/tilemap.cpp
         third_party/tinyxml2/tinyxml2.cpp)
