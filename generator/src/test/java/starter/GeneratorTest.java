@@ -1,0 +1,108 @@
+package starter;
+
+import java.io.InputStream;
+import java.nio.file.*;
+import java.util.*;
+
+public final class GeneratorTest {
+    public static void main(String[] args) throws Exception {
+        Path parent = Files.createTempDirectory("starter-generator-test");
+        try {
+            run(parent);
+        } finally {
+            try (var paths = Files.walk(parent)) {
+                for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) Files.delete(path);
+            }
+        }
+    }
+
+    private static void run(Path parent) throws Exception {
+        var desktop = new StarterGenerator.Options("DesktopGame", "com.example.desktop",
+                parent.resolve("DesktopGame"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null);
+        generate(desktop, (command, dir, env, log) -> { throw new AssertionError("Unexpected command"); });
+        String app = Files.readString(desktop.output().resolve("app/build.gradle.kts"));
+        check(app.contains("\"desktopBuild\"") && !app.contains("\"htmlBuild\"") && !app.contains("android {"),
+                "Only selected tasks are generated");
+        check(!Files.exists(desktop.output().resolve("app/src/main/cpp/emsdk")), "SDK not copied");
+        check(!Files.exists(desktop.output().resolve("app/src/main/cpp/ios-frameworks")), "iOS frameworks not copied");
+        check(Files.isRegularFile(desktop.output().resolve("app/src/main/cpp/raylib/src/raylib.h")), "raylib copied");
+        check(Files.readString(desktop.output().resolve("settings.gradle.kts")).contains("\"DesktopGame\""), "project name");
+
+        try {
+            generate(desktop, (command, dir, env, log) -> {});
+            throw new AssertionError("Existing output was accepted");
+        } catch (IllegalArgumentException expected) {
+            check(Files.exists(desktop.output().resolve("gradlew")), "existing output preserved");
+        }
+        try {
+            StarterGenerator.validate(new StarterGenerator.Options("../bad", "com.example.game",
+                    parent.resolve("bad"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null));
+            throw new AssertionError("Invalid name accepted");
+        } catch (IllegalArgumentException expected) {
+            // Expected.
+        }
+
+        Path python = findPython();
+        if (python == null) throw new AssertionError("Python 3.10+ is required to exercise web generation");
+        List<List<String>> commands = new ArrayList<>();
+        var all = new StarterGenerator.Options("AllPlatforms", "com.example.all",
+                parent.resolve("AllPlatforms"), EnumSet.allOf(StarterGenerator.Platform.class), python);
+        generate(all, (command, dir, env, log) -> {
+            commands.add(command);
+            if (command.get(0).equals("git")) Files.createDirectory(all.output().resolve("app/src/main/cpp/emsdk"));
+            else check(env.get("EMSDK_PYTHON").equals(python.toString()), "Python passed to SDK");
+        });
+        check(commands.size() == 3 && commands.get(0).contains("clone")
+                && commands.get(1).contains("install") && commands.get(2).contains("activate"), "SDK install sequence");
+        app = Files.readString(all.output().resolve("app/build.gradle.kts"));
+        for (String task : List.of("desktopBuild", "iosBuild", "iosRun", "htmlBuild"))
+            check(app.contains("\"" + task + "\""), "missing " + task);
+        check(app.contains("namespace = \"com.example.all\""), "Android application ID");
+        check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
+                .contains("com.example.all"), "iOS application ID");
+        check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
+                .contains("enable_language(OBJC)"), "iOS Objective-C enabled");
+        check(Files.readString(all.output().resolve("app/src/main/cpp/main.cpp"))
+                .contains("#include <TargetConditionals.h>"), "Apple target macros available");
+        check(Files.isDirectory(all.output().resolve("app/src/main/cpp/ios-frameworks")), "iOS frameworks copied");
+        if (!System.getProperty("os.name").startsWith("Windows"))
+            check(Files.isExecutable(all.output().resolve("app/src/main/cpp/ios-frameworks/libEGL.xcframework/ios-arm64/libEGL.framework/libEGL")),
+                    "iOS framework binary executable");
+
+        var failure = new StarterGenerator.Options("FailedWeb", "com.example.fail",
+                parent.resolve("FailedWeb"), EnumSet.of(StarterGenerator.Platform.WEB), python);
+        try {
+            generate(failure, (command, dir, env, log) -> { throw new java.io.IOException("download failed"); });
+            throw new AssertionError("Download failure ignored");
+        } catch (java.io.IOException expected) {
+            check(expected.getMessage().equals("download failed"), "Download failure surfaced");
+        }
+    }
+
+    private static void generate(StarterGenerator.Options options, StarterGenerator.CommandRunner runner) throws Exception {
+        try (InputStream template = GeneratorTest.class.getResourceAsStream("/starter-template.zip")) {
+            if (template == null) throw new AssertionError("template missing");
+            StarterGenerator.generate(options, template, runner, line -> {});
+        }
+    }
+
+    private static Path findPython() {
+        for (String dir : System.getenv().getOrDefault("PATH", "").split(java.io.File.pathSeparator)) {
+            for (String name : List.of("python3", "python.exe")) {
+                Path path = Path.of(dir, name).toAbsolutePath();
+                if (!Files.isRegularFile(path)) continue;
+                try {
+                    if (new ProcessBuilder(path.toString(), "-c", "import sys; sys.exit(sys.version_info < (3,10))")
+                            .start().waitFor() == 0) return path;
+                } catch (Exception ignored) {
+                    // Try another executable.
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void check(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
+    }
+}
