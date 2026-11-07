@@ -27,6 +27,8 @@ public final class GeneratorTest {
         check(!Files.exists(desktop.output().resolve("app/src/main/cpp/ios-frameworks")), "iOS frameworks not copied");
         check(Files.isRegularFile(desktop.output().resolve("app/src/main/cpp/raylib/src/raylib.h")), "raylib copied");
         check(Files.readString(desktop.output().resolve("settings.gradle.kts")).contains("\"DesktopGame\""), "project name");
+        check(Files.readString(desktop.output().resolve("app/src/main/cpp/CMakeLists.txt"))
+                .contains("project(DesktopGame LANGUAGES C CXX)"), "CMake project name");
 
         try {
             generate(desktop, (command, dir, env, log) -> {});
@@ -60,6 +62,8 @@ public final class GeneratorTest {
         check(app.contains("namespace = \"com.example.all\""), "Android application ID");
         check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
                 .contains("com.example.all"), "iOS application ID");
+        check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
+                .contains("project(AllPlatforms LANGUAGES C CXX)"), "CMake project name for all platforms");
         check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
                 .contains("enable_language(OBJC)"), "iOS Objective-C enabled");
         check(Files.readString(all.output().resolve("app/src/main/cpp/main.cpp"))

@@ -105,7 +105,10 @@ public final class StarterGenerator {
         Path strings = output.resolve("app/src/main/res/values/strings.xml");
         write(strings, Files.readString(strings).replace("MyRaylibGame", options.name()));
         Path cmake = output.resolve("app/src/main/cpp/CMakeLists.txt");
-        write(cmake, Files.readString(cmake).replace("com.tinybytelabs.myraylibgame", options.applicationId())
+        write(cmake, Files.readString(cmake)
+                .replace("project(myraylibgame LANGUAGES C CXX)",
+                        "project(" + options.name() + " LANGUAGES C CXX)")
+                .replace("com.tinybytelabs.myraylibgame", options.applicationId())
                 .replace("elseif (CMAKE_SYSTEM_NAME STREQUAL \"iOS\")",
                         "elseif (CMAKE_SYSTEM_NAME STREQUAL \"iOS\")\n    enable_language(OBJC)")
                 .replace("MACOSX_BUNDLE_BUNDLE_NAME \"MyRaylibGame\"",
