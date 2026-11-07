@@ -1,8 +1,10 @@
-import java.util.Properties
-
 @@ANDROID@@
 
 val nativeDir = file("src/main/cpp")
+
+fun bash(script: String): List<String> {
+    return listOf("bash", "-lc", script)
+}
 
 @@DESKTOP@@
 

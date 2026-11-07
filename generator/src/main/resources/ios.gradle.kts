@@ -1,39 +1,36 @@
 val iosBuildDir = nativeDir.resolve("build/ios")
-val iosConfigure = tasks.register<Exec>("iosConfigure") {
-    group = "build"
-    workingDir = nativeDir
-    commandLine("cmake", "-S", ".", "-B", iosBuildDir.absolutePath, "-G", "Xcode",
-        "-DCMAKE_SYSTEM_NAME=iOS", "-DCMAKE_OSX_ARCHITECTURES=arm64",
-        "-DCMAKE_OSX_DEPLOYMENT_TARGET=18.0",
-        "-DCMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER=@@PACKAGE@@")
-    providers.gradleProperty("iosTeam").orNull?.let {
-        args("-DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM=$it")
-    }
-}
+
 tasks.register<Exec>("iosBuild") {
     group = "build"
-    dependsOn(iosConfigure)
+    description = "Generate and build iOS app with CMake + Xcode"
     workingDir = nativeDir
-    commandLine("cmake", "--build", iosBuildDir.absolutePath, "--config", "Release")
+    commandLine = bash(
+        """
+                cmake -S . \
+                      -B """ + iosBuildDir + """ \
+                      -G Xcode \
+                      -DCMAKE_SYSTEM_NAME=iOS \
+                      -DCMAKE_OSX_ARCHITECTURES=arm64 \
+                      -DCMAKE_OSX_DEPLOYMENT_TARGET=18.0
+                """.trimIndent()
+    )
 }
-tasks.register<Exec>("iosInstall") {
-    group = "application"
-    dependsOn("iosBuild")
-    workingDir = nativeDir
-    doFirst {
-        val device = providers.gradleProperty("iosDevice").orNull
-            ?: throw GradleException("Set -PiosDevice to the UDID of a connected iOS device")
-        commandLine("xcrun", "devicectl", "device", "install", "app", "--device", device,
-            iosBuildDir.resolve("Release-iphoneos/myraylibgame.app").absolutePath)
-    }
-}
+
 tasks.register<Exec>("iosRun") {
-    group = "application"
-    dependsOn("iosInstall")
-    workingDir = nativeDir
-    doFirst {
-        val device = providers.gradleProperty("iosDevice").orNull
-            ?: throw GradleException("Set -PiosDevice to the UDID of a connected iOS device")
-        commandLine("xcrun", "devicectl", "device", "process", "launch", "--device", device, "@@PACKAGE@@")
-    }
+    group = "iosRun"
+    description = "Run the iOS app"
+
+    dependsOn("iosBuild")
+
+    workingDir = iosBuildDir
+
+    commandLine(
+        "xcodebuild",
+        "-project", "${iosBuildDir}/${rootProject.name.lowercase()}.xcodeproj",
+        "-scheme", rootProject.name.lowercase(),
+        "-destination", "platform=iOS,id=${myUUID}",
+        "-configuration", "Release",
+        "CODE_SIGNING_ALLOWED=NO",
+        "-allowProvisioningUpdates"
+    )
 }
