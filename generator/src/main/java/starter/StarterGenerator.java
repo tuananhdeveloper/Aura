@@ -158,15 +158,27 @@ public final class StarterGenerator {
     }
 
     static String documentation(Options options) {
-        StringBuilder text = new StringBuilder("# " + options.name() + "\n\nGenerated raylib starter project.\n");
-        if (options.platforms().contains(Platform.DESKTOP))
-            text.append("\n## Desktop\nInstall CMake 3.28+ and the native compiler and window-system development libraries. Run `./gradlew :app:run` or `./gradlew :app:desktopBuild`.\n");
-        if (options.platforms().contains(Platform.ANDROID))
-            text.append("\n## Android\nInstall Android SDK, NDK, and CMake 4.1.2 in Android Studio. Configure `local.properties` with `sdk.dir`, then run `./gradlew :app:assembleDebug`.\n");
-        if (options.platforms().contains(Platform.IOS))
-            text.append("\n## iOS\nOn macOS, install Xcode and CMake 3.28+. Run `./gradlew :app:iosBuild -PiosTeam=<team-ID>` to build, or `./gradlew :app:iosRun -PiosTeam=<team-ID> -PiosDevice=<device-UDID>` to install and launch on a connected device. The device and application ID must be provisioned and trusted.\n");
-        if (options.platforms().contains(Platform.WEB))
-            text.append("\n## Web\nInstall the Emscripten SDK once and select its existing directory in Aura. Aura does not download or copy the SDK. Python 3.10+ and CMake are also required. The selected SDK and Python paths are written to `app/build.gradle.kts`; override them with `-PemsdkDir=/path/to/emsdk -PemsdkPython=/path/to/python3` on another machine. Run `./gradlew :app:htmlBuild`.\n");
+        StringBuilder text = new StringBuilder("# ").append(options.name())
+                .append("\n\nA raylib starter project.\n\n## Build\n");
+        if (options.platforms().contains(Platform.DESKTOP)) {
+            text.append("\n### Desktop\nRequires CMake 3.28+ and a native compiler.\n")
+                    .append("- Run: `./gradlew :app:run`\n")
+                    .append("- Build only: `./gradlew :app:desktopBuild`\n");
+        }
+        if (options.platforms().contains(Platform.ANDROID)) {
+            text.append("\n### Android\nRequires Android Studio with the Android SDK, NDK, and CMake installed.\n")
+                    .append("- Build: `./gradlew :app:assembleDebug`\n");
+        }
+        if (options.platforms().contains(Platform.IOS)) {
+            text.append("\n### iOS\nRequires macOS, Xcode, and CMake 3.28+.\n")
+                    .append("- Build: `./gradlew :app:iosBuild`\n")
+                    .append("- Run: `./gradlew :app:iosRun` (set `MY_IOS_UDID` in `local.properties`)\n");
+        }
+        if (options.platforms().contains(Platform.WEB)) {
+            text.append("\n### Web\nRequires an installed Emscripten SDK, Python 3.10+, and CMake. ")
+                    .append("Set the SDK and Python paths in `app/build.gradle.kts`.\n")
+                    .append("- Build: `./gradlew :app:htmlBuild`\n");
+        }
         return text.toString();
     }
 

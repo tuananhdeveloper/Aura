@@ -40,6 +40,10 @@ public final class GeneratorTest {
         check(Files.readString(desktop.output().resolve("app/src/main/cpp/CMakeLists.txt"))
                 .contains("add_executable(DesktopGame main.cpp)"), "desktop target name");
         check(app.contains("\"./\" + rootProject.name"), "desktop runs case-sensitive target name");
+        String readme = Files.readString(desktop.output().resolve("README.md"));
+        check(readme.contains("# DesktopGame") && readme.contains("`./gradlew :app:run`"),
+                "README includes the project name and desktop command");
+        check(!readme.contains("### Android") && !readme.contains("### Web"), "README lists selected platforms only");
 
         try {
             generate(desktop);
@@ -91,6 +95,12 @@ public final class GeneratorTest {
         check(app.contains("Emscripten SDK directory not found"), "SDK path validated at build time");
         check(app.contains("cmd\", \"/d\", \"/c\""), "Windows SDK environment supported");
         check(app.contains("source ") && app.contains("emcmake cmake"), "Unix SDK environment supported");
+        readme = Files.readString(all.output().resolve("README.md"));
+        check(readme.contains("### Android") && readme.contains("### iOS")
+                && readme.contains("### Desktop") && readme.contains("### Web"),
+                "README includes selected platforms");
+        check(readme.contains("MY_IOS_UDID") && readme.contains("Python 3.10+"),
+                "README includes concise platform setup");
         check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
                 .contains("enable_language(OBJC)"), "iOS Objective-C enabled");
         check(Files.readString(all.output().resolve("app/src/main/cpp/main.cpp"))
