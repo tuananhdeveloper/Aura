@@ -111,6 +111,8 @@ public final class StarterGenerator {
         Path preferences = output.resolve("app/src/main/cpp/framework/preferences.hpp");
         write(preferences, Files.readString(preferences)
                 .replace("@@NAME@@", options.name()));
+        Path main = output.resolve("app/src/main/cpp/main.cpp");
+        write(main, Files.readString(main).replace("@@NAME@@", options.name()));
         for (String file : List.of("app/src/main/cpp/main.cpp", "app/src/main/cpp/framework/platform.hpp")) {
             Path source = output.resolve(file);
             write(source, "#if defined(__APPLE__)\n#include <TargetConditionals.h>\n#endif\n" + Files.readString(source));
@@ -181,6 +183,7 @@ public final class StarterGenerator {
         JTextField packageName = new JTextField("com.example.mygame", 30);
         JTextField parent = new JTextField(System.getProperty("user.home"), 30);
         JTextField emsdk = new JTextField(30);
+        emsdk.setEditable(false);
         JTextField python = new JTextField(30);
         python.setEditable(false);
         JButton browse = new JButton("Browse...");

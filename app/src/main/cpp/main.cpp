@@ -6,7 +6,7 @@
 
 using namespace std;
 
-Framework::Core app("Raylib Template Engine");
+Framework::Core app("@@NAME@@");
 auto game = make_unique<MyGame>();
 
 #if defined(__APPLE__) && TARGET_OS_IOS
