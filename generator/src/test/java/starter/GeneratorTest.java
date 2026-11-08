@@ -17,6 +17,14 @@ public final class GeneratorTest {
     }
 
     private static void run(Path parent) throws Exception {
+        var pythonChooser = StarterGenerator.pythonFileChooser(parent);
+        check(pythonChooser.getFileSelectionMode() == javax.swing.JFileChooser.FILES_ONLY,
+                "Python chooser selects files");
+        check(pythonChooser.getFileFilter().accept(parent.resolve("python3.12").toFile()),
+                "Python chooser accepts versioned Python executable");
+        check(!pythonChooser.getFileFilter().accept(parent.resolve("notes.txt").toFile()),
+                "Python chooser filters unrelated files");
+
         var desktop = new StarterGenerator.Options("DesktopGame", "com.example.desktop",
                 parent.resolve("DesktopGame"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null);
         generate(desktop);

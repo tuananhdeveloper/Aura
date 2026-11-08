@@ -2,6 +2,7 @@ package starter;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -181,6 +182,7 @@ public final class StarterGenerator {
         JTextField parent = new JTextField(System.getProperty("user.home"), 30);
         JTextField emsdk = new JTextField(30);
         JTextField python = new JTextField(30);
+        python.setEditable(false);
         JButton browse = new JButton("Browse...");
         browse.addActionListener(event -> {
             JFileChooser chooser = new JFileChooser(parent.getText());
@@ -201,6 +203,18 @@ public final class StarterGenerator {
         JPanel emsdkLocation = new JPanel(new BorderLayout(4, 0));
         emsdkLocation.add(emsdk);
         emsdkLocation.add(browseEmsdk, BorderLayout.EAST);
+        JButton browsePython = new JButton("Browse...");
+        browsePython.addActionListener(event -> {
+            Path initialDirectory = python.getText().isBlank()
+                    ? Path.of(System.getProperty("user.home"))
+                    : Path.of(python.getText()).getParent();
+            JFileChooser chooser = pythonFileChooser(initialDirectory);
+            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION)
+                python.setText(chooser.getSelectedFile().getAbsolutePath());
+        });
+        JPanel pythonLocation = new JPanel(new BorderLayout(4, 0));
+        pythonLocation.add(python);
+        pythonLocation.add(browsePython, BorderLayout.EAST);
         JPanel platforms = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         Map<Platform, JCheckBox> selections = new EnumMap<>(Platform.class);
         for (Platform platform : Platform.values()) {
@@ -215,7 +229,7 @@ public final class StarterGenerator {
         addRow(form, c, 2, "Parent directory", location);
         addRow(form, c, 3, "Platforms", platforms);
         addRow(form, c, 4, "Existing Emscripten SDK (Web)", emsdkLocation);
-        addRow(form, c, 5, "Python executable (Web)", python);
+        addRow(form, c, 5, "Python executable (Web)", pythonLocation);
         JTextArea log = new JTextArea(12, 60);
         log.setEditable(false);
         JButton generate = new JButton("Generate");
@@ -264,6 +278,24 @@ public final class StarterGenerator {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    static JFileChooser pythonFileChooser(Path initialDirectory) {
+        JFileChooser chooser = new JFileChooser(initialDirectory.toFile());
+        chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.isDirectory() || file.getName().toLowerCase(Locale.ROOT).startsWith("python");
+            }
+
+            @Override
+            public String getDescription() {
+                return "Python executable";
+            }
+        });
+        return chooser;
     }
 
     private static void addRow(JPanel panel, GridBagConstraints c, int row, String label, Component field) {
