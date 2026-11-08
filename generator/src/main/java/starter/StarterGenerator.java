@@ -14,6 +14,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public final class StarterGenerator {
+    public static final String APP_NAME = "Aura";
+
     enum Platform { ANDROID, IOS, DESKTOP, WEB }
 
     record Options(String name, String applicationId, Path output, Set<Platform> platforms, Path python) {}
@@ -96,7 +98,7 @@ public final class StarterGenerator {
         write(output.resolve("app/build.gradle.kts"), app);
         Path settings = output.resolve("settings.gradle.kts");
         if (options.platforms().contains(Platform.ANDROID)) {
-            write(settings, Files.readString(settings).replace("@@NAME@@", options.name);
+            write(settings, Files.readString(settings).replace("@@NAME@@", options.name));
         } else {
             write(settings, "rootProject.name = \"" + options.name() + "\"\ninclude(\":app\")\n");
             write(output.resolve("build.gradle.kts"), "");
@@ -183,7 +185,7 @@ public final class StarterGenerator {
     }
 
     private static void showWindow() {
-        JFrame frame = new JFrame("Raylib Starter Generator");
+        JFrame frame = new JFrame(APP_NAME);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         JPanel form = new JPanel(new GridBagLayout());
         form.setBorder(new EmptyBorder(12, 12, 12, 12));
