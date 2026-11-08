@@ -159,7 +159,7 @@ public final class StarterGenerator {
 
     static String documentation(Options options) {
         StringBuilder text = new StringBuilder("# ").append(options.name())
-                .append("\n\nA raylib starter project.\n\n## Build\n");
+                .append("\n\nA starter project.\n\n## Build\n");
         if (options.platforms().contains(Platform.DESKTOP)) {
             text.append("\n### Desktop\nRequires CMake 3.28+ and a native compiler.\n")
                     .append("- Run: `./gradlew :app:run`\n")
