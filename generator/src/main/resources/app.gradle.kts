@@ -6,13 +6,13 @@ fun bash(script: String): List<String> {
     return listOf("bash", "-lc", script)
 }
 
+tasks.register<Delete>("nativeClean") {
+    group = "build"
+    delete(nativeDir.resolve("build"))
+}
+
 @@DESKTOP@@
 
 @@IOS@@
 
 @@WEB@@
-
-tasks.register<Delete>("nativeClean") {
-    group = "build"
-    delete(nativeDir.resolve("build"))
-}
