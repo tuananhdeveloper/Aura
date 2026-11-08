@@ -130,13 +130,13 @@ private:
 
         const float dpadY = static_cast<float>(screenHeight - controlsHeight);
         btnLeft = std::make_unique<Framework::Button>(Rectangle{ 30, dpadY + 40, 80, 80 },
-                                                       "\u25c4", DARKGRAY, RAYWHITE, 0.3f);
+                                                       "<", DARKGRAY, RAYWHITE, 0.3f);
         btnRight = std::make_unique<Framework::Button>(Rectangle{ 210, dpadY + 40, 80, 80 },
-                                                        "\u25ba", DARKGRAY, RAYWHITE, 0.3f);
+                                                        ">", DARKGRAY, RAYWHITE, 0.3f);
         btnUp = std::make_unique<Framework::Button>(Rectangle{ 120, dpadY - 30, 80, 80 },
-                                                     "\u25b2", DARKGRAY, RAYWHITE, 0.3f);
+                                                     "^", DARKGRAY, RAYWHITE, 0.3f);
         btnDown = std::make_unique<Framework::Button>(Rectangle{ 120, dpadY + 110, 80, 80 },
-                                                       "\u25bc", DARKGRAY, RAYWHITE, 0.3f);
+                                                       "v", DARKGRAY, RAYWHITE, 0.3f);
     }
 
 public:
