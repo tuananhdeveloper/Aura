@@ -20,9 +20,12 @@ public final class StarterGenerator {
     enum Platform { ANDROID, IOS, DESKTOP, WEB }
 
     record Options(String name, String applicationId, Path output, Set<Platform> platforms,
-                   Path emsdkDir, Path python) {}
+                   Path androidSdkDir, Path emsdkDir, Path python) {}
 
     static void validate(Options options) throws IOException, InterruptedException {
+        if (options.platforms().contains(Platform.ANDROID)
+                && (options.androidSdkDir() == null || !Files.isDirectory(options.androidSdkDir())))
+            throw new IllegalArgumentException("Select an existing Android SDK directory.");
         if (!options.name().matches("[A-Za-z][A-Za-z0-9_-]{0,63}"))
             throw new IllegalArgumentException("Project name must start with a letter and contain only letters, digits, - and _ (maximum 64 characters).");
         if (Set.of("raylib", "native_app_glue", "glfw", "all", "clean", "help", "install",
@@ -111,6 +114,13 @@ public final class StarterGenerator {
         Path preferences = output.resolve("app/src/main/cpp/framework/preferences.hpp");
         write(preferences, Files.readString(preferences)
                 .replace("@@NAME@@", options.name()));
+        if (options.platforms().contains(Platform.ANDROID)) {
+            Properties localProperties = new Properties();
+            localProperties.setProperty("sdk.dir", options.androidSdkDir().toAbsolutePath().toString());
+            try (Writer writer = Files.newBufferedWriter(output.resolve("local.properties"), StandardCharsets.ISO_8859_1)) {
+                localProperties.store(writer, "Android SDK location");
+            }
+        }
         Path main = output.resolve("app/src/main/cpp/main.cpp");
         write(main, Files.readString(main).replace("@@NAME@@", options.name()));
         for (String file : List.of("app/src/main/cpp/main.cpp", "app/src/main/cpp/framework/platform.hpp")) {
@@ -167,7 +177,7 @@ public final class StarterGenerator {
                     .append("- Windows cross-build (Linux/macOS): `./gradlew :app:windowsBuild` (requires MinGW-w64)\n");
         }
         if (options.platforms().contains(Platform.ANDROID)) {
-            text.append("\n### Android\nRequires Android Studio with the Android SDK, NDK, and CMake installed.\n")
+            text.append("\n### Android\nRequires Android Studio with the Android SDK, NDK, and CMake installed. The SDK path is saved in `local.properties`.\n")
                     .append("- Build: `./gradlew :app:assembleDebug`\n");
         }
         if (options.platforms().contains(Platform.IOS)) {
@@ -195,6 +205,8 @@ public final class StarterGenerator {
         JTextField name = new JTextField("MyGame", 30);
         JTextField packageName = new JTextField("com.example.mygame", 30);
         JTextField parent = new JTextField(System.getProperty("user.home"), 30);
+        JTextField androidSdk = new JTextField(30);
+        androidSdk.setEditable(false);
         JTextField emsdk = new JTextField(30);
         emsdk.setEditable(false);
         JTextField python = new JTextField(30);
@@ -209,6 +221,17 @@ public final class StarterGenerator {
         JPanel location = new JPanel(new BorderLayout(4, 0));
         location.add(parent);
         location.add(browse, BorderLayout.EAST);
+        JButton browseAndroidSdk = new JButton("Browse...");
+        browseAndroidSdk.addActionListener(event -> {
+            JFileChooser chooser = new JFileChooser(androidSdk.getText().isBlank()
+                    ? System.getProperty("user.home") : androidSdk.getText());
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION)
+                androidSdk.setText(chooser.getSelectedFile().getAbsolutePath());
+        });
+        JPanel androidSdkLocation = new JPanel(new BorderLayout(4, 0));
+        androidSdkLocation.add(androidSdk);
+        androidSdkLocation.add(browseAndroidSdk, BorderLayout.EAST);
         JButton browseEmsdk = new JButton("Browse...");
         browseEmsdk.addActionListener(event -> {
             JFileChooser chooser = new JFileChooser(emsdk.getText().isBlank() ? System.getProperty("user.home") : emsdk.getText());
@@ -244,8 +267,9 @@ public final class StarterGenerator {
         addRow(form, c, 1, "Application ID", packageName);
         addRow(form, c, 2, "Parent directory", location);
         addRow(form, c, 3, "Platforms", platforms);
-        addRow(form, c, 4, "Existing Emscripten SDK (Web)", emsdkLocation);
-        addRow(form, c, 5, "Python executable (Web)", pythonLocation);
+        addRow(form, c, 4, "Android SDK (Android)", androidSdkLocation);
+        addRow(form, c, 5, "Existing Emscripten SDK (Web)", emsdkLocation);
+        addRow(form, c, 6, "Python executable (Web)", pythonLocation);
         JTextArea log = new JTextArea(12, 60);
         log.setEditable(false);
         JButton generate = new JButton("Generate");
@@ -253,9 +277,17 @@ public final class StarterGenerator {
             try {
                 EnumSet<Platform> selected = EnumSet.noneOf(Platform.class);
                 selections.forEach((platform, box) -> { if (box.isSelected()) selected.add(platform); });
+                if (selected.contains(Platform.ANDROID)
+                        && (androidSdk.getText().isBlank() || !Files.isDirectory(Path.of(androidSdk.getText().trim())))) {
+                    JOptionPane.showMessageDialog(frame,
+                            "Select an existing Android SDK directory before generating the project.",
+                            "Android SDK required", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
                 String projectName = name.getText().trim();
                 Path destination = Path.of(parent.getText()).toAbsolutePath().resolve(projectName).normalize();
                 Options options = new Options(projectName, packageName.getText().trim(), destination, selected,
+                        androidSdk.getText().isBlank() ? null : Path.of(androidSdk.getText().trim()).toAbsolutePath(),
                         emsdk.getText().isBlank() ? null : Path.of(emsdk.getText().trim()).toAbsolutePath(),
                         python.getText().isBlank() ? null : Path.of(python.getText().trim()).toAbsolutePath());
                 generate.setEnabled(false);

@@ -26,7 +26,7 @@ public final class GeneratorTest {
                 "Python chooser filters unrelated files");
 
         var desktop = new StarterGenerator.Options("DesktopGame", "com.example.desktop",
-                parent.resolve("DesktopGame"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null);
+                parent.resolve("DesktopGame"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null, null);
         generate(desktop);
         String app = Files.readString(desktop.output().resolve("app/build.gradle.kts"));
         check(app.contains("\"desktopBuild\"") && !app.contains("\"htmlBuild\"") && !app.contains("android {"),
@@ -56,14 +56,14 @@ public final class GeneratorTest {
         }
         try {
             StarterGenerator.validate(new StarterGenerator.Options("../bad", "com.example.game",
-                    parent.resolve("bad"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null));
+                    parent.resolve("bad"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null, null));
             throw new AssertionError("Invalid name accepted");
         } catch (IllegalArgumentException expected) {
             // Expected.
         }
         try {
             StarterGenerator.validate(new StarterGenerator.Options("raylib", "com.example.game",
-                    parent.resolve("raylib"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null));
+                    parent.resolve("raylib"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null, null));
             throw new AssertionError("Conflicting native target name accepted");
         } catch (IllegalArgumentException expected) {
             // Expected.
@@ -71,16 +71,23 @@ public final class GeneratorTest {
 
         Path python = findPython();
         if (python == null) throw new AssertionError("Python 3.10+ is required to exercise web generation");
+        Path androidSdk = Files.createDirectory(parent.resolve("android sdk"));
         Path sdk = Files.createDirectory(parent.resolve("shared emsdk"));
         Files.writeString(sdk.resolve("emsdk_env.sh"), "#!/bin/sh\n");
         var all = new StarterGenerator.Options("AllPlatforms", "com.example.all",
-                parent.resolve("AllPlatforms"), EnumSet.allOf(StarterGenerator.Platform.class), sdk, python);
+                parent.resolve("AllPlatforms"), EnumSet.allOf(StarterGenerator.Platform.class), androidSdk, sdk, python);
         generate(all);
         check(!Files.exists(all.output().resolve("app/src/main/cpp/emsdk")), "SDK not copied into generated project");
         app = Files.readString(all.output().resolve("app/build.gradle.kts"));
         for (String task : List.of("desktopBuild", "iosBuild", "iosRun", "htmlBuild"))
             check(app.contains("\"" + task + "\""), "missing " + task);
         check(app.contains("namespace = \"com.example.all\""), "Android application ID");
+        Properties generatedLocalProperties = new Properties();
+        try (var reader = Files.newBufferedReader(all.output().resolve("local.properties"))) {
+            generatedLocalProperties.load(reader);
+        }
+        check(generatedLocalProperties.getProperty("sdk.dir").equals(androidSdk.toAbsolutePath().toString()),
+                "Android SDK path saved to local.properties");
         check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
                 .contains("com.example.all"), "iOS application ID");
         check(Files.readString(all.output().resolve("app/src/main/cpp/CMakeLists.txt"))
@@ -115,7 +122,7 @@ public final class GeneratorTest {
 
         try {
             StarterGenerator.validate(new StarterGenerator.Options("MissingSdk", "com.example.fail",
-                    parent.resolve("MissingSdk"), EnumSet.of(StarterGenerator.Platform.WEB), parent.resolve("missing"), python));
+                    parent.resolve("MissingSdk"), EnumSet.of(StarterGenerator.Platform.WEB), null, parent.resolve("missing"), python));
             throw new AssertionError("Missing SDK accepted");
         } catch (IllegalArgumentException expected) {
             check(expected.getMessage().contains("existing Emscripten SDK"), "Missing SDK error");
@@ -123,11 +130,22 @@ public final class GeneratorTest {
         Path invalidSdk = Files.createDirectory(parent.resolve("not-an-sdk"));
         try {
             StarterGenerator.validate(new StarterGenerator.Options("InvalidSdk", "com.example.fail",
-                    parent.resolve("InvalidSdk"), EnumSet.of(StarterGenerator.Platform.WEB), invalidSdk, python));
+                    parent.resolve("InvalidSdk"), EnumSet.of(StarterGenerator.Platform.WEB), null, invalidSdk, python));
             throw new AssertionError("Directory without an Emscripten environment script accepted");
         } catch (IllegalArgumentException expected) {
             check(expected.getMessage().contains("not an Emscripten SDK"), "Invalid SDK error");
         }
+        try {
+            StarterGenerator.validate(new StarterGenerator.Options("MissingAndroidSdk", "com.example.android",
+                    parent.resolve("MissingAndroidSdk"), EnumSet.of(StarterGenerator.Platform.ANDROID, StarterGenerator.Platform.WEB),
+                    null, parent.resolve("missing"), null));
+            throw new AssertionError("Missing Android SDK was not reported first");
+        } catch (IllegalArgumentException expected) {
+            check(expected.getMessage().contains("Android SDK"), "Android SDK error has highest priority");
+        }
+        var desktopWithoutAndroidSdk = new StarterGenerator.Options("DesktopWithoutSdk", "com.example.desktop",
+                parent.resolve("DesktopWithoutSdk"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null, null);
+        StarterGenerator.validate(desktopWithoutAndroidSdk);
     }
 
     private static void generate(StarterGenerator.Options options) throws Exception {
