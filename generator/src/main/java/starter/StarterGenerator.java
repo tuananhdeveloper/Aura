@@ -210,6 +210,8 @@ public final class StarterGenerator {
                     .append("Set the SDK and Python paths in `app/build.gradle.kts`.\n")
                     .append("- Build: `./gradlew :app:htmlBuild`\n");
         }
+        text.append("\n## License\nAura's original framework and starter code is licensed under the Apache License 2.0; see `LICENSE`. ")
+                .append("Third-party components and assets may have different terms; review their licenses before distributing your project.\n");
         return text.toString();
     }
 

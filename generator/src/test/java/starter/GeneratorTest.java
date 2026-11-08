@@ -46,6 +46,11 @@ public final class GeneratorTest {
                 "README includes the project name and desktop command");
         check(readme.contains("`./gradlew :app:windowsBuild`")
                 && readme.contains("MinGW-w64"), "README documents Windows cross-build");
+        check(readme.contains("Apache License 2.0") && readme.contains("Third-party"),
+                "README explains framework and third-party licenses");
+        check(Files.readString(desktop.output().resolve("LICENSE")).contains("Apache License")
+                && Files.readString(desktop.output().resolve("LICENSE")).contains("Version 2.0, January 2004"),
+                "Generated project includes Apache 2.0 license");
         check(!readme.contains("### Android") && !readme.contains("### Web"), "README lists selected platforms only");
         check(Files.readString(desktop.output().resolve("app/src/main/AndroidManifest.xml"))
                 .contains("android:theme=\"@style/AppTheme\""), "Android app uses custom fullscreen theme");

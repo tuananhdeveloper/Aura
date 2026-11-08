@@ -72,4 +72,6 @@ Create screens by extending `Framework::Screen` and connect them through `Framew
 
 ## Dependencies and licensing
 
-Aura bundles raylib and other third-party code and frameworks. Review their licenses and redistribution terms before distributing a project. No project-wide Aura license is currently specified in this repository.
+Aura's original framework and generator code is licensed under the [Apache License 2.0](LICENSE). The license permits commercial and non-commercial use.
+
+Bundled third-party components, including raylib, GLFW, tinyxml2, and the iOS frameworks, remain subject to their own licenses and notices. Review those terms and the permissions for bundled assets before distributing Aura or generated projects.

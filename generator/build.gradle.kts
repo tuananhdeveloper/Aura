@@ -15,7 +15,7 @@ val templateZip = tasks.register<Zip>("templateZip") {
     archiveFileName = "starter-template.zip"
     destinationDirectory = layout.buildDirectory.dir("template")
     from(rootDir.parentFile) {
-        include("app/src/main/**", "gradle/**", "gradlew", "gradlew.bat",
+        include("LICENSE", "app/src/main/**", "gradle/**", "gradlew", "gradlew.bat",
                 "gradle.properties", "build.gradle.kts", "settings.gradle.kts")
         exclude("gradle/gradle-daemon-jvm.properties", "app/src/main/cpp/emsdk/**", "app/src/main/cpp/build/**",
                 "app/src/main/cpp/tests/**")
