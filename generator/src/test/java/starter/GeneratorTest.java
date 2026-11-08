@@ -47,6 +47,11 @@ public final class GeneratorTest {
         check(readme.contains("`./gradlew :app:windowsBuild`")
                 && readme.contains("MinGW-w64"), "README documents Windows cross-build");
         check(!readme.contains("### Android") && !readme.contains("### Web"), "README lists selected platforms only");
+        check(Files.readString(desktop.output().resolve("app/src/main/AndroidManifest.xml"))
+                .contains("android:theme=\"@style/AppTheme\""), "Android app uses custom fullscreen theme");
+        check(Files.readString(desktop.output().resolve("app/src/main/res/values/styles.xml"))
+                .contains("<item name=\"android:windowLayoutInDisplayCutoutMode\">shortEdges</item>"),
+                "Generated Android theme uses short display cutout edges");
 
         try {
             generate(desktop);
