@@ -1,4 +1,10 @@
 val iosBuildDir = nativeDir.resolve("build/ios")
+val iosProperties = java.util.Properties()
+val iosPropertiesFile = rootProject.file("local.properties")
+if (iosPropertiesFile.exists()) {
+    iosPropertiesFile.inputStream().use { iosProperties.load(it) }
+}
+val iosDeviceId: String? = iosProperties.getProperty("MY_IOS_UDID")
 
 tasks.register<Exec>("iosBuild") {
     group = "build"
@@ -26,9 +32,9 @@ tasks.register<Exec>("iosRun") {
 
     commandLine(
         "xcodebuild",
-        "-project", "${iosBuildDir}/${rootProject.name.lowercase()}.xcodeproj",
-        "-scheme", rootProject.name.lowercase(),
-        "-destination", "platform=iOS,id=${myUUID}",
+        "-project", "${iosBuildDir}/${rootProject.name}.xcodeproj",
+        "-scheme", rootProject.name,
+        "-destination", "platform=iOS,id=${iosDeviceId}",
         "-configuration", "Release",
         "CODE_SIGNING_ALLOWED=NO",
         "-allowProvisioningUpdates"

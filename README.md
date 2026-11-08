@@ -12,8 +12,9 @@ java -jar generator/build/libs/raylib-starter-generator.jar
 ```
 
 The generator creates a new directory and will not overwrite an existing one. Generated projects include a README with the prerequisites and build commands for the selected platforms.
+The project name also becomes the native CMake target and Android library name. Names reserved by CMake or already used by bundled native libraries cannot be used.
 
-For Web, provide the absolute path to Python 3.10 or newer. Git and internet access are also required: Aura clones the Emscripten SDK into `app/src/main/cpp/emsdk`, then downloads and activates its latest toolchain. This can take substantial time and disk space. SDK configuration is machine-specific; reactivate it after moving the generated project.
+For Web, select an existing Emscripten SDK directory and provide the absolute path to Python 3.10 or newer. Aura reuses that installation; it does not download, copy, or activate the SDK while generating projects. The generated Gradle file points to the selected SDK and Python paths, which can be overridden with `-PemsdkDir=/path/to/emsdk -PemsdkPython=/path/to/python3`. These paths are machine-specific.
 
 If generation fails, the incomplete output directory is left in place for inspection. Remove or rename it before retrying.
 
@@ -22,6 +23,6 @@ If generation fails, the incomplete output directory is left in place for inspec
 - **Desktop:** `./gradlew :app:run` or `./gradlew :app:desktopBuild`.
 - **Android:** Configure the Android SDK, NDK, and CMake in Android Studio, then run `./gradlew :app:assembleDebug`.
 - **iOS:** On macOS with Xcode, run `./gradlew :app:iosBuild -PiosTeam=<team-ID>`, or `./gradlew :app:iosRun -PiosTeam=<team-ID> -PiosDevice=<device-UDID>` for a connected, provisioned device.
-- **Web:** Run `./gradlew :app:htmlBuild`. Configure the Emscripten and Python paths in `app/build.gradle.kts` or override them with `-PemsdkDir` and `-PemsdkPython`.
+- **Web:** Run `./gradlew :app:htmlBuild`. The selected Emscripten SDK and Python paths are configured in `app/build.gradle.kts`; override them with `-PemsdkDir` and `-PemsdkPython` if needed.
 
 The native project in `app/src/main` provides the starter template. The Emscripten SDK is not included in this repository.

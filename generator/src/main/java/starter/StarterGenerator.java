@@ -18,32 +18,16 @@ public final class StarterGenerator {
 
     enum Platform { ANDROID, IOS, DESKTOP, WEB }
 
-    record Options(String name, String applicationId, Path output, Set<Platform> platforms, Path python) {}
-
-    interface CommandRunner {
-        void run(List<String> command, Path directory, Map<String, String> environment,
-                 Consumer<String> log) throws IOException, InterruptedException;
-    }
-
-    static final class ProcessRunner implements CommandRunner {
-        public void run(List<String> command, Path directory, Map<String, String> environment,
-                        Consumer<String> log) throws IOException, InterruptedException {
-            ProcessBuilder builder = new ProcessBuilder(command).directory(directory.toFile())
-                    .redirectErrorStream(true);
-            builder.environment().putAll(environment);
-            Process process = builder.start();
-            try (BufferedReader reader = process.inputReader(StandardCharsets.UTF_8)) {
-                String line;
-                while ((line = reader.readLine()) != null) log.accept(line);
-            }
-            int result = process.waitFor();
-            if (result != 0) throw new IOException(command.get(0) + " exited with status " + result);
-        }
-    }
+    record Options(String name, String applicationId, Path output, Set<Platform> platforms,
+                   Path emsdkDir, Path python) {}
 
     static void validate(Options options) throws IOException, InterruptedException {
         if (!options.name().matches("[A-Za-z][A-Za-z0-9_-]{0,63}"))
             throw new IllegalArgumentException("Project name must start with a letter and contain only letters, digits, - and _ (maximum 64 characters).");
+        if (Set.of("raylib", "native_app_glue", "glfw", "all", "clean", "help", "install",
+                "test", "package", "rebuild_cache", "edit_cache", "list_install_components",
+                "ZERO_CHECK", "ALL_BUILD", "RUN_TESTS").contains(options.name()))
+            throw new IllegalArgumentException("Project name conflicts with a native build target: " + options.name());
         if (!options.applicationId().matches("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+"))
             throw new IllegalArgumentException("Application ID must contain lowercase identifier segments, for example com.example.game.");
         if (options.platforms().isEmpty())
@@ -53,15 +37,23 @@ public final class StarterGenerator {
         if (options.output().getParent() == null || !Files.isDirectory(options.output().getParent()))
             throw new IllegalArgumentException("The output parent directory must exist.");
         if (options.platforms().contains(Platform.WEB)) {
+            if (options.emsdkDir() == null || !Files.isDirectory(options.emsdkDir()))
+                throw new IllegalArgumentException("Select an existing Emscripten SDK directory.");
+            if (!Files.isRegularFile(options.emsdkDir().resolve("emsdk_env.sh"))
+                    && !Files.isRegularFile(options.emsdkDir().resolve("emsdk_env.bat")))
+                throw new IllegalArgumentException("Selected directory is not an Emscripten SDK: " + options.emsdkDir());
             if (options.python() == null || !Files.isRegularFile(options.python()))
                 throw new IllegalArgumentException("Select a Python 3.10+ executable for the web SDK.");
-            new ProcessRunner().run(List.of(options.python().toString(), "-c",
-                    "import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)"),
-                    options.output().getParent(), Map.of(), line -> {});
+            int version = new ProcessBuilder(options.python().toString(), "-c",
+                    "import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)")
+                    .redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .start().waitFor();
+            if (version != 0)
+                throw new IllegalArgumentException("Python 3.10 or newer is required: " + options.python());
         }
     }
 
-    static void generate(Options options, InputStream template, CommandRunner runner, Consumer<String> log)
+    static void generate(Options options, InputStream template, Consumer<String> log)
             throws IOException, InterruptedException {
         validate(options);
         Path output = options.output().toAbsolutePath().normalize();
@@ -94,7 +86,8 @@ public final class StarterGenerator {
                 .replace("@@IOS@@", fragment(options, Platform.IOS, "ios.gradle.kts"))
                 .replace("@@WEB@@", fragment(options, Platform.WEB, "web.gradle.kts"))
                 .replace("@@PACKAGE@@", options.applicationId())
-                .replace("@@PYTHON@@", options.python() == null ? "" : kotlinString(options.python().toAbsolutePath().toString()));
+                .replace("@@PYTHON@@", options.python() == null ? "" : kotlinString(options.python().toAbsolutePath().toString()))
+                .replace("@@EMSDK@@", options.emsdkDir() == null ? "" : kotlinString(options.emsdkDir().toAbsolutePath().toString()));
         write(output.resolve("app/build.gradle.kts"), app);
         Path settings = output.resolve("settings.gradle.kts");
         if (options.platforms().contains(Platform.ANDROID)) {
@@ -125,18 +118,6 @@ public final class StarterGenerator {
         write(output.resolve(".gitignore"), ".gradle/\n**/build/\nlocal.properties\n.cxx/\n.externalNativeBuild/\napp/src/main/cpp/emsdk/\n");
         write(output.resolve("README.md"), documentation(options));
 
-        if (options.platforms().contains(Platform.WEB)) {
-            Path nativeDir = output.resolve("app/src/main/cpp");
-            Path sdk = nativeDir.resolve("emsdk");
-            log.accept("Cloning Emscripten SDK (this can take a while)...");
-            runner.run(List.of("git", "clone", "--depth", "1",
-                    "https://github.com/emscripten-core/emsdk.git", sdk.toString()),
-                    nativeDir, Map.of(), log);
-            Map<String, String> env = Map.of("EMSDK_PYTHON", options.python().toAbsolutePath().toString());
-            log.accept("Installing and activating the latest Emscripten SDK...");
-            runner.run(List.of(options.python().toString(), "emsdk.py", "install", "latest"), sdk, env, log);
-            runner.run(List.of(options.python().toString(), "emsdk.py", "activate", "latest"), sdk, env, log);
-        }
         log.accept("Project generated successfully.");
     }
 
@@ -180,7 +161,7 @@ public final class StarterGenerator {
         if (options.platforms().contains(Platform.IOS))
             text.append("\n## iOS\nOn macOS, install Xcode and CMake 3.28+. Run `./gradlew :app:iosBuild -PiosTeam=<team-ID>` to build, or `./gradlew :app:iosRun -PiosTeam=<team-ID> -PiosDevice=<device-UDID>` to install and launch on a connected device. The device and application ID must be provisioned and trusted.\n");
         if (options.platforms().contains(Platform.WEB))
-            text.append("\n## Web\nThe Emscripten SDK is installed in `app/src/main/cpp/emsdk`. Python 3.10+ and CMake are required. Set `emsdkDir` and `emsdkPython` in `app/build.gradle.kts`, or override them with `-PemsdkDir=/path/to/emsdk -PemsdkPython=/path/to/python3`. Run `./gradlew :app:htmlBuild`. Re-activate the SDK with `emsdk activate latest` after moving the project.\n");
+            text.append("\n## Web\nInstall the Emscripten SDK once and select its existing directory in Aura. Aura does not download or copy the SDK. Python 3.10+ and CMake are also required. The selected SDK and Python paths are written to `app/build.gradle.kts`; override them with `-PemsdkDir=/path/to/emsdk -PemsdkPython=/path/to/python3` on another machine. Run `./gradlew :app:htmlBuild`.\n");
         return text.toString();
     }
 
@@ -196,6 +177,7 @@ public final class StarterGenerator {
         JTextField name = new JTextField("MyGame", 30);
         JTextField packageName = new JTextField("com.example.mygame", 30);
         JTextField parent = new JTextField(System.getProperty("user.home"), 30);
+        JTextField emsdk = new JTextField(30);
         JTextField python = new JTextField(30);
         JButton browse = new JButton("Browse...");
         browse.addActionListener(event -> {
@@ -207,6 +189,16 @@ public final class StarterGenerator {
         JPanel location = new JPanel(new BorderLayout(4, 0));
         location.add(parent);
         location.add(browse, BorderLayout.EAST);
+        JButton browseEmsdk = new JButton("Browse...");
+        browseEmsdk.addActionListener(event -> {
+            JFileChooser chooser = new JFileChooser(emsdk.getText().isBlank() ? System.getProperty("user.home") : emsdk.getText());
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION)
+                emsdk.setText(chooser.getSelectedFile().getAbsolutePath());
+        });
+        JPanel emsdkLocation = new JPanel(new BorderLayout(4, 0));
+        emsdkLocation.add(emsdk);
+        emsdkLocation.add(browseEmsdk, BorderLayout.EAST);
         JPanel platforms = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
         Map<Platform, JCheckBox> selections = new EnumMap<>(Platform.class);
         for (Platform platform : Platform.values()) {
@@ -220,7 +212,8 @@ public final class StarterGenerator {
         addRow(form, c, 1, "Application ID", packageName);
         addRow(form, c, 2, "Parent directory", location);
         addRow(form, c, 3, "Platforms", platforms);
-        addRow(form, c, 4, "Python executable (Web)", python);
+        addRow(form, c, 4, "Existing Emscripten SDK (Web)", emsdkLocation);
+        addRow(form, c, 5, "Python executable (Web)", python);
         JTextArea log = new JTextArea(12, 60);
         log.setEditable(false);
         JButton generate = new JButton("Generate");
@@ -231,13 +224,14 @@ public final class StarterGenerator {
                 String projectName = name.getText().trim();
                 Path destination = Path.of(parent.getText()).toAbsolutePath().resolve(projectName).normalize();
                 Options options = new Options(projectName, packageName.getText().trim(), destination, selected,
+                        emsdk.getText().isBlank() ? null : Path.of(emsdk.getText().trim()).toAbsolutePath(),
                         python.getText().isBlank() ? null : Path.of(python.getText().trim()).toAbsolutePath());
                 generate.setEnabled(false);
                 new SwingWorker<Void, String>() {
                     protected Void doInBackground() throws Exception {
                         try (InputStream template = StarterGenerator.class.getResourceAsStream("/starter-template.zip")) {
                             if (template == null) throw new IOException("Bundled starter template is missing.");
-                            StarterGenerator.generate(options, template, new ProcessRunner(), this::publish);
+                            StarterGenerator.generate(options, template, this::publish);
                         }
                         return null;
                     }

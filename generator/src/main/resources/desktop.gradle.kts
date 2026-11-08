@@ -5,10 +5,11 @@ tasks.register<Exec>("desktopBuild") {
     description = "Configure and build the native desktop game"
     workingDir = nativeDir
 
-    commandLine = bash(
+    commandLine = listOf("bash", "-c",
         """
-        cmake -S . -B """ + desktopBuildDir + """
-        cmake --build """ + desktopBuildDir + """
+        set -e
+        cmake -S . -B "${desktopBuildDir}"
+        cmake --build "${desktopBuildDir}"
         """.trimIndent()
     )
 }
@@ -21,6 +22,5 @@ tasks.register<Exec>("run") {
 
     workingDir = desktopBuildDir
 
-    commandLine = bash("./" + rootProject.name.lowercase())
+    commandLine = listOf("bash", "-c", "./" + rootProject.name)
 }
-
