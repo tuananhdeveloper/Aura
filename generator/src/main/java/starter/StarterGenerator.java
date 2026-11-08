@@ -163,7 +163,8 @@ public final class StarterGenerator {
         if (options.platforms().contains(Platform.DESKTOP)) {
             text.append("\n### Desktop\nRequires CMake 3.28+ and a native compiler.\n")
                     .append("- Run: `./gradlew :app:run`\n")
-                    .append("- Build only: `./gradlew :app:desktopBuild`\n");
+                    .append("- Build only: `./gradlew :app:desktopBuild`\n")
+                    .append("- Windows cross-build (Linux/macOS): `./gradlew :app:windowsBuild` (requires MinGW-w64)\n");
         }
         if (options.platforms().contains(Platform.ANDROID)) {
             text.append("\n### Android\nRequires Android Studio with the Android SDK, NDK, and CMake installed.\n")

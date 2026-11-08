@@ -40,9 +40,12 @@ public final class GeneratorTest {
         check(Files.readString(desktop.output().resolve("app/src/main/cpp/CMakeLists.txt"))
                 .contains("add_executable(DesktopGame main.cpp)"), "desktop target name");
         check(app.contains("\"./\" + rootProject.name"), "desktop runs case-sensitive target name");
+        check(app.contains("\"windowsBuild\""), "Windows build task is registered");
         String readme = Files.readString(desktop.output().resolve("README.md"));
         check(readme.contains("# DesktopGame") && readme.contains("`./gradlew :app:run`"),
                 "README includes the project name and desktop command");
+        check(readme.contains("`./gradlew :app:windowsBuild`")
+                && readme.contains("MinGW-w64"), "README documents Windows cross-build");
         check(!readme.contains("### Android") && !readme.contains("### Web"), "README lists selected platforms only");
 
         try {

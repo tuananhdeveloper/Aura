@@ -24,3 +24,13 @@ tasks.register<Exec>("run") {
 
     commandLine = listOf("bash", "-c", "./" + rootProject.name)
 }
+
+val windowsBuildDir = nativeDir.resolve("build/windows")
+tasks.register<Exec>("windowsBuild") {
+    group = "application"
+    description = "Cross-compile the native game for Windows from Linux or macOS"
+    workingDir = nativeDir
+    val toolchain = nativeDir.resolve("windows-toolchain.cmake")
+    commandLine = listOf("bash", "-c",
+        "set -e; cmake -S . -B \"${windowsBuildDir.absolutePath}\" -DCMAKE_TOOLCHAIN_FILE=\"${toolchain.absolutePath}\"; cmake --build \"${windowsBuildDir.absolutePath}\"")
+}
