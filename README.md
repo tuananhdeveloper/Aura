@@ -6,7 +6,13 @@ The starter includes a sample game and shared framework components for screens a
 
 ## Create a project
 
-Install JDK 17 or newer, then build and open the generator from this repository:
+Download `aura-starter-generator.jar` from [the latest GitHub release](https://github.com/tuananhdeveloper/Aura/releases/latest/download/aura-starter-generator.jar), then run it with JDK 17 or newer:
+
+```sh
+java -jar aura-starter-generator.jar
+```
+
+For development, build and run the generator from this repository:
 
 ```sh
 ./gradlew -p generator jar
