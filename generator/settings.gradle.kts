@@ -1,1 +1,1 @@
-rootProject.name = "raylib-starter-generator"
+rootProject.name = "aura-starter-generator"
