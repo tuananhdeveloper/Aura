@@ -23,9 +23,10 @@ public final class StarterGenerator {
                    Path androidSdkDir, Path emsdkDir, Path python) {}
 
     static void validate(Options options) throws IOException, InterruptedException {
-        if (options.platforms().contains(Platform.ANDROID)
-                && (options.androidSdkDir() == null || !Files.isDirectory(options.androidSdkDir())))
-            throw new IllegalArgumentException("Select an existing Android SDK directory.");
+        if (options.platforms().contains(Platform.ANDROID)) {
+            String sdkError = androidSdkError(options.androidSdkDir());
+            if (sdkError != null) throw new IllegalArgumentException(sdkError);
+        }
         if (!options.name().matches("[A-Za-z][A-Za-z0-9_-]{0,63}"))
             throw new IllegalArgumentException("Project name must start with a letter and contain only letters, digits, - and _ (maximum 64 characters).");
         if (Set.of("raylib", "native_app_glue", "glfw", "all", "clean", "help", "install",
@@ -43,8 +44,7 @@ public final class StarterGenerator {
         if (options.platforms().contains(Platform.WEB)) {
             if (options.emsdkDir() == null || !Files.isDirectory(options.emsdkDir()))
                 throw new IllegalArgumentException("Select an existing Emscripten SDK directory.");
-            if (!Files.isRegularFile(options.emsdkDir().resolve("emsdk_env.sh"))
-                    && !Files.isRegularFile(options.emsdkDir().resolve("emsdk_env.bat")))
+            if (!isEmscriptenSdk(options.emsdkDir()))
                 throw new IllegalArgumentException("Selected directory is not an Emscripten SDK: " + options.emsdkDir());
             if (options.python() == null || !Files.isRegularFile(options.python()))
                 throw new IllegalArgumentException("Select a Python 3.10+ executable for the web SDK.");
@@ -55,6 +55,26 @@ public final class StarterGenerator {
             if (version != 0)
                 throw new IllegalArgumentException("Python 3.10 or newer is required: " + options.python());
         }
+    }
+
+    static String androidSdkError(Path directory) {
+        if (directory == null || !Files.isDirectory(directory))
+            return "Select an existing Android SDK directory.";
+        boolean hasAdb = Files.isRegularFile(directory.resolve("platform-tools/adb"))
+                || Files.isRegularFile(directory.resolve("platform-tools/adb.exe"));
+        if (!hasAdb || !Files.isDirectory(directory.resolve("platforms")))
+            return "The selected directory is not an Android SDK. Choose the SDK root containing platform-tools and platforms.";
+        return null;
+    }
+
+    static boolean isEmscriptenSdk(Path directory) {
+        boolean hasEnvironment = Files.isRegularFile(directory.resolve("emsdk_env.sh"))
+                || Files.isRegularFile(directory.resolve("emsdk_env.bat"));
+        boolean hasEmcc = Files.isRegularFile(directory.resolve("upstream/emscripten/emcc"))
+                || Files.isRegularFile(directory.resolve("upstream/emscripten/emcc.bat"));
+        boolean hasClang = Files.isRegularFile(directory.resolve("upstream/bin/clang"))
+                || Files.isRegularFile(directory.resolve("upstream/bin/clang.exe"));
+        return hasEnvironment && hasEmcc && hasClang;
     }
 
     static void generate(Options options, InputStream template, Consumer<String> log)
@@ -277,12 +297,15 @@ public final class StarterGenerator {
             try {
                 EnumSet<Platform> selected = EnumSet.noneOf(Platform.class);
                 selections.forEach((platform, box) -> { if (box.isSelected()) selected.add(platform); });
-                if (selected.contains(Platform.ANDROID)
-                        && (androidSdk.getText().isBlank() || !Files.isDirectory(Path.of(androidSdk.getText().trim())))) {
+                if (selected.contains(Platform.ANDROID)) {
+                    String sdkError = androidSdkError(androidSdk.getText().isBlank()
+                            ? null : Path.of(androidSdk.getText().trim()));
+                    if (sdkError != null) {
                     JOptionPane.showMessageDialog(frame,
-                            "Select an existing Android SDK directory before generating the project.",
+                            sdkError,
                             "Android SDK required", JOptionPane.ERROR_MESSAGE);
                     return;
+                    }
                 }
                 String projectName = name.getText().trim();
                 Path destination = Path.of(parent.getText()).toAbsolutePath().resolve(projectName).normalize();

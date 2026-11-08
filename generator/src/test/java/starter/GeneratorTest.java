@@ -71,9 +71,13 @@ public final class GeneratorTest {
 
         Path python = findPython();
         if (python == null) throw new AssertionError("Python 3.10+ is required to exercise web generation");
-        Path androidSdk = Files.createDirectory(parent.resolve("android sdk"));
+        Path androidSdk = createAndroidSdk(parent.resolve("android sdk"));
         Path sdk = Files.createDirectory(parent.resolve("shared emsdk"));
         Files.writeString(sdk.resolve("emsdk_env.sh"), "#!/bin/sh\n");
+        Files.createDirectories(sdk.resolve("upstream/emscripten"));
+        Files.createDirectories(sdk.resolve("upstream/bin"));
+        Files.writeString(sdk.resolve("upstream/emscripten/emcc"), "");
+        Files.writeString(sdk.resolve("upstream/bin/clang"), "");
         var all = new StarterGenerator.Options("AllPlatforms", "com.example.all",
                 parent.resolve("AllPlatforms"), EnumSet.allOf(StarterGenerator.Platform.class), androidSdk, sdk, python);
         generate(all);
@@ -128,6 +132,7 @@ public final class GeneratorTest {
             check(expected.getMessage().contains("existing Emscripten SDK"), "Missing SDK error");
         }
         Path invalidSdk = Files.createDirectory(parent.resolve("not-an-sdk"));
+        Files.writeString(invalidSdk.resolve("emsdk_env.sh"), "#!/bin/sh\n");
         try {
             StarterGenerator.validate(new StarterGenerator.Options("InvalidSdk", "com.example.fail",
                     parent.resolve("InvalidSdk"), EnumSet.of(StarterGenerator.Platform.WEB), null, invalidSdk, python));
@@ -135,6 +140,12 @@ public final class GeneratorTest {
         } catch (IllegalArgumentException expected) {
             check(expected.getMessage().contains("not an Emscripten SDK"), "Invalid SDK error");
         }
+        Path incompleteSdk = Files.createDirectory(parent.resolve("incomplete-emsdk"));
+        Files.writeString(incompleteSdk.resolve("emsdk_env.sh"), "#!/bin/sh\n");
+        Files.createDirectories(incompleteSdk.resolve("upstream/emscripten"));
+        Files.writeString(incompleteSdk.resolve("upstream/emscripten/emcc"), "");
+        check(!StarterGenerator.isEmscriptenSdk(incompleteSdk),
+                "Emscripten directory without compiler is rejected");
         try {
             StarterGenerator.validate(new StarterGenerator.Options("MissingAndroidSdk", "com.example.android",
                     parent.resolve("MissingAndroidSdk"), EnumSet.of(StarterGenerator.Platform.ANDROID, StarterGenerator.Platform.WEB),
@@ -143,9 +154,25 @@ public final class GeneratorTest {
         } catch (IllegalArgumentException expected) {
             check(expected.getMessage().contains("Android SDK"), "Android SDK error has highest priority");
         }
+        Path wrongAndroidDirectory = Files.createDirectory(parent.resolve("not-android-sdk"));
+        try {
+            StarterGenerator.validate(new StarterGenerator.Options("WrongAndroidSdk", "com.example.android",
+                    parent.resolve("WrongAndroidSdk"), EnumSet.of(StarterGenerator.Platform.ANDROID),
+                    wrongAndroidDirectory, null, null));
+            throw new AssertionError("Unrelated directory accepted as Android SDK");
+        } catch (IllegalArgumentException expected) {
+            check(expected.getMessage().contains("not an Android SDK"), "Android SDK root markers required");
+        }
         var desktopWithoutAndroidSdk = new StarterGenerator.Options("DesktopWithoutSdk", "com.example.desktop",
                 parent.resolve("DesktopWithoutSdk"), EnumSet.of(StarterGenerator.Platform.DESKTOP), null, null, null);
         StarterGenerator.validate(desktopWithoutAndroidSdk);
+    }
+
+    private static Path createAndroidSdk(Path directory) throws Exception {
+        Files.createDirectories(directory.resolve("platform-tools"));
+        Files.createFile(directory.resolve("platform-tools/adb"));
+        Files.createDirectories(directory.resolve("platforms"));
+        return directory;
     }
 
     private static void generate(StarterGenerator.Options options) throws Exception {
