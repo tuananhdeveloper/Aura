@@ -96,8 +96,7 @@ public final class StarterGenerator {
         write(output.resolve("app/build.gradle.kts"), app);
         Path settings = output.resolve("settings.gradle.kts");
         if (options.platforms().contains(Platform.ANDROID)) {
-            write(settings, Files.readString(settings).replace("rootProject.name = \"MyRaylibGame\"",
-                    "rootProject.name = \"" + options.name() + "\""));
+            write(settings, Files.readString(settings).replace("@@NAME@@", options.name);
         } else {
             write(settings, "rootProject.name = \"" + options.name() + "\"\ninclude(\":app\")\n");
             write(output.resolve("build.gradle.kts"), "");

@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MyRaylibGame"
+rootProject.name = "@@NAME@@"
 include(":app")
