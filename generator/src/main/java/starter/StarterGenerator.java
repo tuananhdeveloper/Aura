@@ -101,7 +101,9 @@ public final class StarterGenerator {
         Path cmake = output.resolve("app/src/main/cpp/CMakeLists.txt");
         write(cmake, Files.readString(cmake)
                 .replace("@@NAME@@", options.name())
-                .replace("@@PACKAGE@@", options.applicationId()));
+                .replace("@@PACKAGE@@", options.applicationId())
+                .replace("elseif (CMAKE_SYSTEM_NAME STREQUAL \"iOS\")",
+                        "elseif (CMAKE_SYSTEM_NAME STREQUAL \"iOS\")\n    enable_language(OBJC)"));
         Path manifest = output.resolve("app/src/main/AndroidManifest.xml");
         write(manifest, Files.readString(manifest)
                 .replace("@@NAME@@", options.name()));
