@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
+
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND NOT DEFINED CMAKE_OSX_ARCHITECTURES)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "macOS target architectures")
+endif()
+
 project(aura_generator VERSION 1.0.0 LANGUAGES C CXX)
 
 include(FetchContent)
@@ -62,12 +67,21 @@ if(APPLE)
     else()
         set(DMG_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
     endif()
-    if(DMG_ARCH STREQUAL "arm64" OR DMG_ARCH STREQUAL "x86_64")
+    set(DMG_ARCH_LIST ${DMG_ARCH})
+    list(SORT DMG_ARCH_LIST)
+    if(DMG_ARCH_LIST STREQUAL "arm64;x86_64")
+        set(DMG_NAME "universal")
+    elseif(DMG_ARCH_LIST STREQUAL "arm64" OR DMG_ARCH_LIST STREQUAL "x86_64")
+        set(DMG_NAME "${DMG_ARCH_LIST}")
+    endif()
+    if(DMG_NAME)
         add_custom_target(package-dmg
             COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config $<CONFIG>
                 --component generator --prefix "${CMAKE_BINARY_DIR}/dmg-contents"
+            COMMAND lipo -verify_arch ${DMG_ARCH_LIST}
+                "${CMAKE_BINARY_DIR}/dmg-contents/Aura Generator.app/Contents/MacOS/Aura Generator"
             COMMAND hdiutil create -volname "Aura Generator" -srcfolder "${CMAKE_BINARY_DIR}/dmg-contents"
-                -ov -format UDZO "${CMAKE_BINARY_DIR}/aura-generator-macos-${DMG_ARCH}.dmg"
+                -ov -format UDZO "${CMAKE_BINARY_DIR}/aura-generator-macos-${DMG_NAME}.dmg"
             DEPENDS aura-generator
             VERBATIM)
     endif()

@@ -6,7 +6,7 @@ The starter includes a sample game and shared framework components for screens a
 
 ## Create a project
 
-Download the package for your system from [GitHub Releases](https://github.com/tuananhdeveloper/Aura/releases): Apple Silicon Mac (`.dmg`), Intel Mac (`.dmg`), Linux x64 (`.tar.gz`), or Windows x64 (`.zip`). On macOS, open the disk image and move **Aura Generator.app** to Applications. The app bundle includes its starter template and resources. These macOS builds are unsigned; macOS may require you to Control-click the app and choose **Open** the first time.
+Download the package for your system from [GitHub Releases](https://github.com/tuananhdeveloper/Aura/releases): universal macOS (`.dmg`, for Apple Silicon and Intel), Linux x64 (`.tar.gz`), or Windows x64 (`.zip`). On macOS, open the disk image and move **Aura Generator.app** to Applications. The app bundle includes its starter template and resources. These macOS builds are unsigned; macOS may require you to Control-click the app and choose **Open** the first time.
 
 On Linux, install `zenity` or `kdialog` for file browsing, or enter paths manually. On Windows, the Microsoft Visual C++ runtime may be required.
 
@@ -24,13 +24,15 @@ On Linux or Windows, run `generator/build/distribution/aura-generator` (or `aura
 cmake --install generator/build --config Release --component generator --prefix generator/dist
 ```
 
-On macOS, the install command creates `generator/dist/Aura Generator.app` with its template included. To create a DMG for the current Mac's architecture instead, run:
+On macOS, the install command creates `generator/dist/Aura Generator.app` with its template included. To create a universal DMG for both Apple Silicon and Intel, configure a separate build directory and package it:
 
 ```sh
-cmake --build generator/build --config Release --target package-dmg
+cmake -S generator -B generator/build-universal -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+cmake --build generator/build-universal --config Release --target package-dmg
 ```
 
-The image is `generator/build/aura-generator-macos-arm64.dmg` on Apple Silicon or `generator/build/aura-generator-macos-x86_64.dmg` on Intel. To build for the other architecture, configure a separate build directory with `-DCMAKE_OSX_ARCHITECTURES=arm64` or `-DCMAKE_OSX_ARCHITECTURES=x86_64`, then run the same target in that directory. The DMGs are not signed or notarized.
+The image is `generator/build-universal/aura-generator-macos-universal.dmg`. Packaging verifies that the executable contains both architectures. New macOS builds default to both architectures; existing build directories must be reconfigured or replaced. The DMG is not signed or notarized.
 
 ### Cross-build Linux and Windows packages from macOS
 

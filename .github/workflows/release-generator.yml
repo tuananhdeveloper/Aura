@@ -20,12 +20,8 @@ jobs:
             artifact: windows-x64
             package: zip
           - os: macos-15
-            architecture: arm64
-            artifact: macos-arm64
-            package: dmg
-          - os: macos-15-intel
-            architecture: x86_64
-            artifact: macos-x86_64
+            architecture: "arm64;x86_64"
+            artifact: macos-universal
             package: dmg
     runs-on: ${{ matrix.os }}
     steps:
