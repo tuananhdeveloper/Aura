@@ -1,22 +1,27 @@
 # Aura
 
-Aura is a C++ game framework built on [raylib](https://www.raylib.com/), with a Java desktop generator for creating starter projects. It targets Android, iOS, desktop, and the web.
+Aura is a C++ game framework built on [raylib](https://www.raylib.com/), with a native desktop generator built with [raygui](https://github.com/raysan5/raygui) for creating starter projects. It targets Android, iOS, desktop, and the web.
 
 The starter includes a sample game and shared framework components for screens and lifecycle, input, viewports, assets, preferences, UI, tilemaps, tweens, and particles.
 
 ## Create a project
 
-Download `aura-starter-generator.jar` from [the latest GitHub release](https://github.com/tuananhdeveloper/Aura/releases/latest/download/aura-starter-generator.jar), then run it with JDK 17 or newer:
+Download the archive for your system from [GitHub Releases](https://github.com/tuananhdeveloper/Aura/releases), extract it, and run `aura-generator` (or `aura-generator.exe` on Windows). Keep the `template`, `resources`, and `third-party-licenses` directories alongside the executable. Native packages will be available after a release is published with the native generator; macOS releases currently target Apple Silicon.
+
+On Linux, install `zenity` or `kdialog` for file browsing, or enter paths manually. On Windows, the Microsoft Visual C++ runtime may be required.
+
+To build the generator from source, install CMake 3.20+, Git, a C++17 compiler, and Python 3.10+ for the tests. On Linux, also install the X11 and OpenGL development libraries. CMake downloads raylib, raygui, and portable-file-dialogs during configuration.
 
 ```sh
-java -jar aura-starter-generator.jar
+cmake -S generator -B generator/build -DCMAKE_BUILD_TYPE=Release
+cmake --build generator/build --config Release
+ctest --test-dir generator/build -C Release --output-on-failure
 ```
 
-For development, build and run the generator from this repository:
+Run `generator/build/distribution/aura-generator` (or `aura-generator.exe` on Windows). To create a distributable directory:
 
 ```sh
-./gradlew -p generator jar
-java -jar generator/build/libs/aura-starter-generator.jar
+cmake --install generator/build --config Release --component generator --prefix generator/dist
 ```
 
 In the generator:
@@ -30,7 +35,7 @@ Aura creates a new project directory; it does not overwrite an existing one. The
 
 ## Build a generated project
 
-Run these commands from the generated project directory:
+Install JDK 17 or newer and run these commands from the generated project directory:
 
 ### Desktop
 
@@ -72,7 +77,7 @@ On another machine, override those paths with `-PemsdkDir=/path/to/emsdk -Pemsdk
 - `app/src/main/cpp/framework/` — shared framework code.
 - `app/src/main/cpp/game/` — sample game and screens; start here to build your game.
 - `app/src/main/assets/` — game assets.
-- `generator/` — Java desktop project generator.
+- `generator/` — native desktop project generator.
 
 Create screens by extending `Framework::Screen` and connect them through `Framework::Game`; see `game/my_game.hpp` and `game/play_screen.hpp` for examples.
 
