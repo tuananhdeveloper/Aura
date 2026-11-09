@@ -4,45 +4,8 @@ Aura is a C++ game framework built on [raylib](https://www.raylib.com/), with a 
 
 The starter includes a sample game and shared framework components for screens and lifecycle, input, viewports, assets, preferences, UI, tilemaps, tweens, and particles.
 
-## Create a project
+<img width="1802" height="1108" alt="image" src="https://github.com/user-attachments/assets/15f10ada-0fe5-4454-be5e-a9cf75c1b84e" />
 
-Download the package for your system from [GitHub Releases](https://github.com/tuananhdeveloper/Aura/releases): universal macOS (`.dmg`, for Apple Silicon and Intel), Linux x64 (`.tar.gz`), or Windows x64 (`.zip`). On macOS, open the disk image and move **Aura Generator.app** to Applications. The app bundle includes its starter template and resources. These macOS builds are unsigned; macOS may require you to Control-click the app and choose **Open** the first time.
-
-On Linux, install `zenity` or `kdialog` for file browsing, or enter paths manually. On Windows, the Microsoft Visual C++ runtime may be required.
-
-To build the generator from source, install CMake 3.20+, Git, a C++17 compiler, and Python 3.10+ for the tests. On Linux, also install the X11 and OpenGL development libraries. CMake downloads raylib, raygui, and portable-file-dialogs during configuration.
-
-```sh
-cmake -S generator -B generator/build -DCMAKE_BUILD_TYPE=Release
-cmake --build generator/build --config Release
-ctest --test-dir generator/build -C Release --output-on-failure
-```
-
-On Linux or Windows, run `generator/build/distribution/aura-generator` (or `aura-generator.exe` on Windows). To create a distributable directory:
-
-```sh
-cmake --install generator/build --config Release --component generator --prefix generator/dist
-```
-
-On macOS, the install command creates `generator/dist/Aura Generator.app` with its template included. To create a universal DMG for both Apple Silicon and Intel, configure a separate build directory and package it:
-
-```sh
-cmake -S generator -B generator/build-universal -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
-cmake --build generator/build-universal --config Release --target package-dmg
-```
-
-The image is `generator/build-universal/aura-generator-macos-universal.dmg`. Packaging verifies that the executable contains both architectures. New macOS builds default to both architectures; existing build directories must be reconfigured or replaced. The DMG is not signed or notarized.
-
-### Cross-build Linux and Windows packages from macOS
-
-Install Docker Desktop, then run this script from the Aura repository root:
-
-```sh
-./generator/cross-build.sh
-```
-
-The script builds in an `linux/amd64` container, so it also works on Apple Silicon Macs (Docker Desktop may use emulation). It tests the Linux build and cross-compiles the Windows x64 build with MinGW-w64. The `.tar.gz` and `.zip` packages are written to `generator/dist/`; extract each archive and keep its executable beside the `template`, `resources`, and `third-party-licenses` directories. These are x64 packages; this does not produce macOS executables.
 
 In the generator:
 
