@@ -78,8 +78,8 @@ if(APPLE)
         add_custom_target(package-dmg
             COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config $<CONFIG>
                 --component generator --prefix "${CMAKE_BINARY_DIR}/dmg-contents"
-            COMMAND lipo -verify_arch ${DMG_ARCH_LIST}
-                "${CMAKE_BINARY_DIR}/dmg-contents/Aura Generator.app/Contents/MacOS/Aura Generator"
+            COMMAND lipo "${CMAKE_BINARY_DIR}/dmg-contents/Aura Generator.app/Contents/MacOS/Aura Generator"
+                -verify_arch ${DMG_ARCH_LIST}
             COMMAND hdiutil create -volname "Aura Generator" -srcfolder "${CMAKE_BINARY_DIR}/dmg-contents"
                 -ov -format UDZO "${CMAKE_BINARY_DIR}/aura-generator-macos-${DMG_NAME}.dmg"
             DEPENDS aura-generator
