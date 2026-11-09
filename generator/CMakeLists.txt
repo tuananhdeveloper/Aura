@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(aura_generator LANGUAGES C CXX)
+project(aura_generator VERSION 1.0.0 LANGUAGES C CXX)
 
 include(FetchContent)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -20,6 +20,16 @@ target_compile_features(generator_core PUBLIC cxx_std_17)
 add_executable(aura-generator src/main.cpp src/dialogs.cpp)
 target_include_directories(aura-generator PRIVATE "${raygui_SOURCE_DIR}/src" "${portable_file_dialogs_SOURCE_DIR}")
 target_link_libraries(aura-generator PRIVATE generator_core raylib)
+if(APPLE)
+    set_target_properties(aura-generator PROPERTIES
+        MACOSX_BUNDLE TRUE
+        OUTPUT_NAME "Aura Generator"
+        MACOSX_BUNDLE_BUNDLE_NAME "Aura Generator"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.tuananhdeveloper.aura-generator"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist.in")
+endif()
 if(WIN32)
     target_link_libraries(aura-generator PRIVATE ole32 shell32)
 endif()
@@ -42,8 +52,15 @@ foreach(config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     set_target_properties(aura-generator PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${config} "${STAGE}")
 endforeach()
 
-install(TARGETS aura-generator RUNTIME DESTINATION . COMPONENT generator)
-install(DIRECTORY "${STAGE}/template" "${STAGE}/resources" "${STAGE}/third-party-licenses" DESTINATION . COMPONENT generator)
+if(APPLE)
+    install(TARGETS aura-generator BUNDLE DESTINATION . COMPONENT generator)
+    install(DIRECTORY "${STAGE}/template" "${STAGE}/resources" "${STAGE}/third-party-licenses"
+        DESTINATION "Aura Generator.app/Contents/MacOS" COMPONENT generator)
+else()
+    install(TARGETS aura-generator RUNTIME DESTINATION . COMPONENT generator)
+    install(DIRECTORY "${STAGE}/template" "${STAGE}/resources" "${STAGE}/third-party-licenses"
+        DESTINATION . COMPONENT generator)
+endif()
 
 include(CTest)
 if(BUILD_TESTING)

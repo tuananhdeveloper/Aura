@@ -6,7 +6,7 @@ The starter includes a sample game and shared framework components for screens a
 
 ## Create a project
 
-Download the archive for your system from [GitHub Releases](https://github.com/tuananhdeveloper/Aura/releases), extract it, and run `aura-generator` (or `aura-generator.exe` on Windows). Keep the `template`, `resources`, and `third-party-licenses` directories alongside the executable. Native packages will be available after a release is published with the native generator; macOS releases currently target Apple Silicon.
+Download the package for your system from [GitHub Releases](https://github.com/tuananhdeveloper/Aura/releases): Apple Silicon Mac (`.dmg`), Intel Mac (`.dmg`), Linux x64 (`.tar.gz`), or Windows x64 (`.zip`). On macOS, open the disk image and move **Aura Generator.app** to Applications. The app bundle includes its starter template and resources. These macOS builds are unsigned; macOS may require you to Control-click the app and choose **Open** the first time.
 
 On Linux, install `zenity` or `kdialog` for file browsing, or enter paths manually. On Windows, the Microsoft Visual C++ runtime may be required.
 
@@ -32,7 +32,7 @@ Install Docker Desktop, then run this script from the Aura repository root:
 ./generator/cross-build.sh
 ```
 
-The script builds in an `linux/amd64` container, so it also works on Apple Silicon Macs (Docker Desktop may use emulation). It tests the Linux build and cross-compiles the Windows x64 build with MinGW-w64. The `.zip` packages are written to `generator/dist/`; extract each archive and keep its executable beside the `template`, `resources`, and `third-party-licenses` directories. These are x64 packages; this does not produce macOS executables.
+The script builds in an `linux/amd64` container, so it also works on Apple Silicon Macs (Docker Desktop may use emulation). It tests the Linux build and cross-compiles the Windows x64 build with MinGW-w64. The `.tar.gz` and `.zip` packages are written to `generator/dist/`; extract each archive and keep its executable beside the `template`, `resources`, and `third-party-licenses` directories. These are x64 packages; this does not produce macOS executables.
 
 In the generator:
 

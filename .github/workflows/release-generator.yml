@@ -15,10 +15,18 @@ jobs:
         include:
           - os: ubuntu-24.04
             artifact: linux-x64
+            package: tar.gz
           - os: windows-2022
             artifact: windows-x64
-          - os: macos-14
+            package: zip
+          - os: macos-15
+            architecture: arm64
             artifact: macos-arm64
+            package: dmg
+          - os: macos-15-intel
+            architecture: x86_64
+            artifact: macos-intel
+            package: dmg
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out source
@@ -29,7 +37,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev
 
       - name: Configure
-        run: cmake -S generator -B generator/build -DCMAKE_BUILD_TYPE=Release
+        shell: bash
+        run: |
+          args=(-DCMAKE_BUILD_TYPE=Release)
+          if [[ -n "${{ matrix.architecture }}" ]]; then
+            args+=("-DCMAKE_OSX_ARCHITECTURES=${{ matrix.architecture }}")
+            args+=("-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0")
+          fi
+          cmake -S generator -B generator/build "${args[@]}"
 
       - name: Build
         run: cmake --build generator/build --config Release --parallel
@@ -41,11 +56,23 @@ jobs:
         shell: bash
         run: |
           cmake --install generator/build --config Release --component generator --prefix "$GITHUB_WORKSPACE/release"
-          cd "$GITHUB_WORKSPACE/release"
-          cmake -E tar cf "../aura-generator-${{ matrix.artifact }}.zip" --format=zip .
+          case "${{ matrix.package }}" in
+            dmg)
+              hdiutil create -volname "Aura Generator" -srcfolder "$GITHUB_WORKSPACE/release" \
+                -ov -format UDZO "$GITHUB_WORKSPACE/aura-generator-${{ matrix.artifact }}.dmg"
+              ;;
+            tar.gz)
+              tar -czf "$GITHUB_WORKSPACE/aura-generator-${{ matrix.artifact }}.tar.gz" \
+                -C "$GITHUB_WORKSPACE/release" .
+              ;;
+            zip)
+              cd "$GITHUB_WORKSPACE/release"
+              cmake -E tar cf "../aura-generator-${{ matrix.artifact }}.zip" --format=zip .
+              ;;
+          esac
 
       - name: Attach package to release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" "aura-generator-${{ matrix.artifact }}.zip"
+        run: gh release upload "$GITHUB_REF_NAME" "aura-generator-${{ matrix.artifact }}.${{ matrix.package }}"
