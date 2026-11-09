@@ -18,11 +18,19 @@ cmake --build generator/build --config Release
 ctest --test-dir generator/build -C Release --output-on-failure
 ```
 
-Run `generator/build/distribution/aura-generator` (or `aura-generator.exe` on Windows). To create a distributable directory:
+On Linux or Windows, run `generator/build/distribution/aura-generator` (or `aura-generator.exe` on Windows). To create a distributable directory:
 
 ```sh
 cmake --install generator/build --config Release --component generator --prefix generator/dist
 ```
+
+On macOS, the install command creates `generator/dist/Aura Generator.app` with its template included. To create a DMG for the current Mac's architecture instead, run:
+
+```sh
+cmake --build generator/build --config Release --target package-dmg
+```
+
+The image is `generator/build/aura-generator-macos-arm64.dmg` on Apple Silicon or `generator/build/aura-generator-macos-x86_64.dmg` on Intel. To build for the other architecture, configure a separate build directory with `-DCMAKE_OSX_ARCHITECTURES=arm64` or `-DCMAKE_OSX_ARCHITECTURES=x86_64`, then run the same target in that directory. The DMGs are not signed or notarized.
 
 ### Cross-build Linux and Windows packages from macOS
 

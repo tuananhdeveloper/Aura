@@ -25,7 +25,7 @@ jobs:
             package: dmg
           - os: macos-15-intel
             architecture: x86_64
-            artifact: macos-intel
+            artifact: macos-x86_64
             package: dmg
     runs-on: ${{ matrix.os }}
     steps:
@@ -55,17 +55,18 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          cmake --install generator/build --config Release --component generator --prefix "$GITHUB_WORKSPACE/release"
           case "${{ matrix.package }}" in
             dmg)
-              hdiutil create -volname "Aura Generator" -srcfolder "$GITHUB_WORKSPACE/release" \
-                -ov -format UDZO "$GITHUB_WORKSPACE/aura-generator-${{ matrix.artifact }}.dmg"
+              cmake --build generator/build --config Release --target package-dmg
+              cp "generator/build/aura-generator-${{ matrix.artifact }}.dmg" "$GITHUB_WORKSPACE/"
               ;;
             tar.gz)
+              cmake --install generator/build --config Release --component generator --prefix "$GITHUB_WORKSPACE/release"
               tar -czf "$GITHUB_WORKSPACE/aura-generator-${{ matrix.artifact }}.tar.gz" \
                 -C "$GITHUB_WORKSPACE/release" .
               ;;
             zip)
+              cmake --install generator/build --config Release --component generator --prefix "$GITHUB_WORKSPACE/release"
               cd "$GITHUB_WORKSPACE/release"
               cmake -E tar cf "../aura-generator-${{ matrix.artifact }}.zip" --format=zip .
               ;;

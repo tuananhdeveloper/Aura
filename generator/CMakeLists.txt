@@ -56,6 +56,21 @@ if(APPLE)
     install(TARGETS aura-generator BUNDLE DESTINATION . COMPONENT generator)
     install(DIRECTORY "${STAGE}/template" "${STAGE}/resources" "${STAGE}/third-party-licenses"
         DESTINATION "Aura Generator.app/Contents/MacOS" COMPONENT generator)
+
+    if(CMAKE_OSX_ARCHITECTURES)
+        set(DMG_ARCH "${CMAKE_OSX_ARCHITECTURES}")
+    else()
+        set(DMG_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    endif()
+    if(DMG_ARCH STREQUAL "arm64" OR DMG_ARCH STREQUAL "x86_64")
+        add_custom_target(package-dmg
+            COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config $<CONFIG>
+                --component generator --prefix "${CMAKE_BINARY_DIR}/dmg-contents"
+            COMMAND hdiutil create -volname "Aura Generator" -srcfolder "${CMAKE_BINARY_DIR}/dmg-contents"
+                -ov -format UDZO "${CMAKE_BINARY_DIR}/aura-generator-macos-${DMG_ARCH}.dmg"
+            DEPENDS aura-generator
+            VERBATIM)
+    endif()
 else()
     install(TARGETS aura-generator RUNTIME DESTINATION . COMPONENT generator)
     install(DIRECTORY "${STAGE}/template" "${STAGE}/resources" "${STAGE}/third-party-licenses"
