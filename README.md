@@ -24,6 +24,16 @@ Run `generator/build/distribution/aura-generator` (or `aura-generator.exe` on Wi
 cmake --install generator/build --config Release --component generator --prefix generator/dist
 ```
 
+### Cross-build Linux and Windows packages from macOS
+
+Install Docker Desktop, then run this script from the Aura repository root:
+
+```sh
+./generator/cross-build.sh
+```
+
+The script builds in an `linux/amd64` container, so it also works on Apple Silicon Macs (Docker Desktop may use emulation). It tests the Linux build and cross-compiles the Windows x64 build with MinGW-w64. The `.zip` packages are written to `generator/dist/`; extract each archive and keep its executable beside the `template`, `resources`, and `third-party-licenses` directories. These are x64 packages; this does not produce macOS executables.
+
 In the generator:
 
 1. Enter a project name, application ID, and parent directory.
