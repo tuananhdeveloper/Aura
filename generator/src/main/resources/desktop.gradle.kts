@@ -5,10 +5,9 @@ tasks.register<Exec>("desktopBuild") {
     description = "Configure and build the native desktop game"
     workingDir = nativeDir
 
-    commandLine = listOf("bash", "-c",
+    commandLine = bash(
         """
-        set -e
-        cmake -S . -B "${desktopBuildDir}"
+        cmake -S . -B "${desktopBuildDir}" $generatorFlag
         cmake --build "${desktopBuildDir}"
         """.trimIndent()
     )
@@ -22,7 +21,12 @@ tasks.register<Exec>("run") {
 
     workingDir = desktopBuildDir
 
-    commandLine = listOf("bash", "-c", "./" + rootProject.name)
+    if (isWindows) {
+        commandLine = bash(rootProject.name)
+    }
+    else {
+        commandLine = bash("./" + rootProject.name)
+    }
 }
 
 val windowsBuildDir = nativeDir.resolve("build/windows")
@@ -31,6 +35,6 @@ tasks.register<Exec>("windowsBuild") {
     description = "Cross-compile the native game for Windows from Linux or macOS"
     workingDir = nativeDir
     val toolchain = nativeDir.resolve("windows-toolchain.cmake")
-    commandLine = listOf("bash", "-c",
+    commandLine = bash(
         "set -e; cmake -S . -B \"${windowsBuildDir.absolutePath}\" -DCMAKE_TOOLCHAIN_FILE=\"${toolchain.absolutePath}\"; cmake --build \"${windowsBuildDir.absolutePath}\"")
 }
