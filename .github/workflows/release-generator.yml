@@ -53,6 +53,7 @@ jobs:
         run: |
           case "${{ matrix.package }}" in
             dmg)
+              brew install create-dmg
               cmake --build generator/build --config Release --target package-dmg
               cp "generator/build/aura-generator-${{ matrix.artifact }}.dmg" "$GITHUB_WORKSPACE/"
               ;;

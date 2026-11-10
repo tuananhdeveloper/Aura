@@ -86,9 +86,9 @@ if(APPLE)
             COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --config $<CONFIG>
                 --component generator --prefix "${CMAKE_BINARY_DIR}/dmg-contents"
             ${DMG_VERIFY_COMMANDS}
-            COMMAND "${CMAKE_COMMAND}" -E create_symlink /Applications "${CMAKE_BINARY_DIR}/dmg-contents/Applications"
-            COMMAND hdiutil create -volname "Aura Generator" -srcfolder "${CMAKE_BINARY_DIR}/dmg-contents"
-                -ov -format UDZO "${CMAKE_BINARY_DIR}/aura-generator-macos-${DMG_NAME}.dmg"
+            COMMAND "${CMAKE_SOURCE_DIR}/macos/make-dmg.sh" "${CMAKE_BINARY_DIR}/dmg-contents"
+                "${CMAKE_BINARY_DIR}/aura-generator-macos-${DMG_NAME}.dmg"
+                "${CMAKE_SOURCE_DIR}/macos/dmg-background.png"
             DEPENDS aura-generator
             VERBATIM)
     endif()
