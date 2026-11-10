@@ -17,7 +17,7 @@ In the generator:
 Aura creates a new project directory; it does not overwrite an existing one. The generated README lists commands for your selected platforms. Emscripten is reused from the selected location, not downloaded or copied.
 
 > [!WARNING]
-> **If you're using Windows, please waiting for a new release**.
+> **> If you're using Windows, you may run into some issues (such as `./gradlew run` failing). Please wait for a future release for full Windows support**.
 
 
 ## Build a generated project
