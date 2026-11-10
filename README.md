@@ -16,6 +16,10 @@ In the generator:
 
 Aura creates a new project directory; it does not overwrite an existing one. The generated README lists commands for your selected platforms. Emscripten is reused from the selected location, not downloaded or copied.
 
+> [!WARNING]
+> **If you're using Windows, please waiting for a new release**.
+
+
 ## Build a generated project
 
 Install JDK 17 or newer and run these commands from the generated project directory:
@@ -30,6 +34,7 @@ Install CMake 3.28+, a native compiler, and the required window-system developme
 ```
 
 To cross-compile for Windows from Linux or macOS, install MinGW-w64 and run `./gradlew :app:windowsBuild`. Check `app/src/main/cpp/windows-toolchain.cmake` if your toolchain is installed in a different location.
+If you're using Windows, please waiting for a new release
 
 ### Android
 
