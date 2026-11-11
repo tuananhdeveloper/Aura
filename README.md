@@ -16,10 +16,6 @@ In the generator:
 
 Aura creates a new project directory; it does not overwrite an existing one. The generated README lists commands for your selected platforms. Emscripten is reused from the selected location, not downloaded or copied.
 
-> [!WARNING]
-> **> If you're using Windows, you may run into some issues (such as `./gradlew run` failing). Please wait for a future release for full Windows support**.
-
-
 ## Build a generated project
 
 Install JDK 17 or newer and run these commands from the generated project directory:
@@ -28,13 +24,33 @@ Install JDK 17 or newer and run these commands from the generated project direct
 
 Install CMake 3.28+, a native compiler, and the required window-system development libraries.
 
+**Windows**
+
+Install Ninja and MinGW-w64
+Open **Command Prompt (CMD)** or **PowerShell** and run the following commands:
+
+```bash
+# Install Ninja build system
+winget install -e --id Ninja-build.Ninja
+
+# Install MinGW-w64 (WinLibs UCRT distribution)
+winget install -e --id BrechtSanders.WinLibs.POSIX.UCRT
+```
+Open a **new** terminal window and verify that both tools are accessible:
+
+```bash
+ninja --version
+g++ --version
+```
+
+**How to build ?**
+
 ```sh
 ./gradlew :app:run
 ./gradlew :app:desktopBuild
 ```
 
 To cross-compile for Windows from Linux or macOS, install MinGW-w64 and run `./gradlew :app:windowsBuild`. Check `app/src/main/cpp/windows-toolchain.cmake` if your toolchain is installed in a different location.
-If you're using Windows, please waiting for a new release
 
 ### Android
 
